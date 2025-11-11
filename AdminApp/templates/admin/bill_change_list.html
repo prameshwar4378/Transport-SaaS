@@ -1,0 +1,87 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .date-range-filter {
+        background: #f8f9fa;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+    }
+    .date-range-filter h3 {
+        margin-top: 0;
+        color: #495057;
+    }
+    .date-range-inputs {
+        display: flex;
+        gap: 15px;
+        align-items: end;
+    }
+    .date-input-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .date-input-group label {
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #495057;
+    }
+    .date-range-buttons {
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block filters %}
+{{ block.super }}
+
+{% if custom_date_range %}
+<div class="date-range-filter">
+    <h3>📅 Custom Date Range Filter</h3>
+    <form method="get">
+        <!-- Preserve existing filters -->
+        {% for key, value in request.GET.items %}
+            {% if key != 'start_date' and key != 'end_date' and key != 'bill_date_range' %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+        {% endfor %}
+        
+        <div class="date-range-inputs">
+            <div class="date-input-group">
+                <label for="start_date">Start Date:</label>
+                <input type="date" name="start_date" id="start_date" 
+                       value="{{ request.GET.start_date }}" 
+                       class="form-control" style="width: 200px;">
+            </div>
+            <div class="date-input-group">
+                <label for="end_date">End Date:</label>
+                <input type="date" name="end_date" id="end_date" 
+                       value="{{ request.GET.end_date }}" 
+                       class="form-control" style="width: 200px;">
+            </div>
+            <div class="date-input-group">
+                <input type="hidden" name="bill_date_range" value="custom">
+                <button type="submit" class="btn btn-primary" style="height: 38px;">
+                    Filter by Date Range
+                </button>
+            </div>
+        </div>
+        
+        {% if request.GET.start_date and request.GET.end_date %}
+        <div class="date-range-buttons">
+            <small class="text-muted">
+                Showing bills from <strong>{{ request.GET.start_date }}</strong> to <strong>{{ request.GET.end_date }}</strong>
+            </small>
+            <a href="?{% for key, value in request.GET.items %}{% if key != 'start_date' and key != 'end_date' and key != 'bill_date_range' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" 
+               class="btn btn-sm btn-outline-secondary" style="margin-left: 10px;">
+                Clear Date Range
+            </a>
+        </div>
+        {% endif %}
+    </form>
+</div>
+{% endif %}
+{% endblock %}

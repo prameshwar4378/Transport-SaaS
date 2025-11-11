@@ -1,0 +1,430 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: 4px solid #007bff;
+    }
+    .stat-card.success { border-left-color: #28a745; }
+    .stat-card.warning { border-left-color: #ffc107; }
+    .stat-card.danger { border-left-color: #dc3545; }
+    .stat-card.info { border-left-color: #17a2b8; }
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #333;
+    }
+    .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+    .chart-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .recent-activity {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .performance-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .performance-table th,
+    .performance-table td {
+        padding: 8px 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    .performance-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+    }
+    .badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    .badge-success { background: #d4edda; color: #155724; }
+    .badge-warning { background: #fff3cd; color: #856404; }
+    .badge-danger { background: #f8d7da; color: #721c24; }
+    .badge-info { background: #d1ecf1; color: #0c5460; }
+    .btn {
+        display: inline-block;
+        padding: 8px 16px;
+        background: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+    }
+    .btn:hover { background: #0056b3; }
+    .btn-success { background: #28a745; }
+    .btn-success:hover { background: #1e7e34; }
+    .btn-info { background: #17a2b8; }
+    .btn-info:hover { background: #117a8b; }
+    .btn-warning { background: #ffc107; color: #212529; }
+    .btn-warning:hover { background: #e0a800; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1>🚗 Transport Management Dashboard</h1>
+    <p class="text-muted">Overview of your transport business performance</p>
+
+    <!-- Today's Overview -->
+    <h3>📊 Today's Overview ({{ today|date:"M d, Y" }})</h3>
+    <div class="dashboard-stats">
+        <div class="stat-card info">
+            <div class="stat-number">{{ today_stats.total_bills }}</div>
+            <div class="stat-label">Bills Generated Today</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-number">₹{{ today_stats.total_rent|floatformat:0 }}</div>
+            <div class="stat-label">Total Rent Amount</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-number">₹{{ today_stats.total_advance|floatformat:0 }}</div>
+            <div class="stat-label">Amount Collected</div>
+        </div>
+        <div class="stat-card danger">
+            <div class="stat-number">₹{{ today_stats.total_pending|floatformat:0 }}</div>
+            <div class="stat-label">Amount Pending</div>
+        </div>
+    </div>
+
+    <!-- Financial Overview -->
+    <h3>💰 Financial Overview</h3>
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-number">₹{{ overall_stats.total_rent|floatformat:0 }}</div>
+            <div class="stat-label">Total Revenue</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-number">₹{{ overall_stats.total_collected|floatformat:0 }}</div>
+            <div class="stat-label">Total Collected</div>
+        </div>
+        <div class="stat-card danger">
+            <div class="stat-number">₹{{ overall_stats.total_pending|floatformat:0 }}</div>
+            <div class="stat-label">Total Pending</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-number">₹{{ overall_stats.commission_pending|floatformat:0 }}</div>
+            <div class="stat-label">Commission Pending</div>
+        </div>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card info">
+            <div class="stat-number">{{ weekly_stats.total_bills }}</div>
+            <div class="stat-label">Bills This Week</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-number">₹{{ weekly_stats.total_rent|floatformat:0 }}</div>
+            <div class="stat-label">Weekly Revenue</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ monthly_stats.total_bills }}</div>
+            <div class="stat-label">Bills This Month</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-number">₹{{ monthly_stats.total_rent|floatformat:0 }}</div>
+            <div class="stat-label">Monthly Revenue</div>
+        </div>
+    </div>
+
+    <!-- Status Distribution -->
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-number">{{ payment_status.paid }}</div>
+            <div class="stat-label">Paid Bills</div>
+            <span class="badge badge-success">Paid</span>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-number">{{ payment_status.partial }}</div>
+            <div class="stat-label">Partial Paid</div>
+            <span class="badge badge-warning">Partial</span>
+        </div>
+        <div class="stat-card danger">
+            <div class="stat-number">{{ payment_status.pending }}</div>
+            <div class="stat-label">Pending Bills</div>
+            <span class="badge badge-danger">Pending</span>
+        </div>
+        <div class="stat-card info">
+            <div class="stat-number">{{ overall_stats.total_bills }}</div>
+            <div class="stat-label">Total Bills</div>
+        </div>
+    </div>
+
+    <!-- Two Column Layout for Charts and Tables -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 30px;">
+        <!-- Recent Activity -->
+        <div class="recent-activity">
+            <h4>📋 Recent Bills</h4>
+            {% if recent_bills %}
+            <table class="performance-table">
+                <thead>
+                    <tr>
+                        <th>Bill No</th>
+                        <th>Party</th>
+                        <th>Vehicle</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bill in recent_bills %}
+                    <tr>
+                        <td>
+                            <a href="/admin/AdminApp/bill/{{ bill.id }}/change/">
+                                {{ bill.bill_number }}
+                            </a>
+                        </td>
+                        <td>{{ bill.party.name|default:"No Party" }}</td>
+                        <td>{{ bill.vehicle.vehicle_number }}</td>
+                        <td>₹{{ bill.rent_amount }}</td>
+                        <td>
+                            {% if bill.pending_amount == 0 %}
+                                <span class="badge badge-success">Paid</span>
+                            {% elif bill.advance_amount == 0 %}
+                                <span class="badge badge-danger">Pending</span>
+                            {% else %}
+                                <span class="badge badge-warning">Partial</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">No recent bills found.</p>
+            {% endif %}
+        </div>
+
+        <!-- Top Performers -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Top Vehicles -->
+            <div class="recent-activity">
+                <h4>🚛 Top Vehicles</h4>
+                {% if vehicle_performance %}
+                <table class="performance-table">
+                    <thead>
+                        <tr>
+                            <th>Vehicle</th>
+                            <th>Trips</th>
+                            <th>Revenue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vehicle in vehicle_performance %}
+                        <tr>
+                            <td>{{ vehicle.vehicle__vehicle_number }}</td>
+                            <td>{{ vehicle.total_trips }}</td>
+                            <td>₹{{ vehicle.total_revenue }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">No vehicle data available.</p>
+                {% endif %}
+            </div>
+
+            <!-- Top Parties -->
+            <div class="recent-activity">
+                <h4>👥 Top Parties</h4>
+                {% if party_performance %}
+                <table class="performance-table">
+                    <thead>
+                        <tr>
+                            <th>Party</th>
+                            <th>Bills</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for party in party_performance %}
+                        <tr>
+                            <td>{{ party.party__name }}</td>
+                            <td>{{ party.total_bills }}</td>
+                            <td>₹{{ party.total_amount }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">No party data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="recent-activity">
+        <h4>⚡ Quick Actions</h4>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <a href="/admin/AdminApp/bill/add/" class="btn btn-primary">
+                ➕ Create New Bill
+            </a>
+            <a href="/admin/AdminApp/vehicle/add/" class="btn btn-success">
+                🚗 Add Vehicle
+            </a>
+            <a href="/admin/AdminApp/party/add/" class="btn btn-info">
+                👥 Add Party
+            </a>
+            <a href="/admin/AdminApp/vehicleowner/add/" class="btn btn-warning">
+                👤 Add Vehicle Owner
+            </a>
+            <a href="/admin/AdminApp/driver/add/" class="btn" style="background: #6f42c1;">
+                🚚 Add Driver
+            </a>
+        </div>
+    </div>
+
+    <!-- Additional Statistics -->
+    <div class="dashboard-stats">
+        <div class="stat-card" style="border-left-color: #6f42c1;">
+            <div class="stat-number">{{ overall_stats.total_bills }}</div>
+            <div class="stat-label">Total Bills</div>
+        </div>
+        <div class="stat-card" style="border-left-color: #e83e8c;">
+            <div class="stat-number">₹{{ overall_stats.total_commission|floatformat:0 }}</div>
+            <div class="stat-label">Total Commission</div>
+        </div>
+        <div class="stat-card" style="border-left-color: #20c997;">
+            <div class="stat-number">₹{{ overall_stats.commission_received|floatformat:0 }}</div>
+            <div class="stat-label">Commission Received</div>
+        </div>
+        <div class="stat-card" style="border-left-color: #fd7e14;">
+            <div class="stat-number">
+                {% if overall_stats.total_rent > 0 %}
+                    {{ overall_stats.total_collected|floatformat:0 }} / {{ overall_stats.total_rent|floatformat:0 }}
+                {% else %}
+                    0
+                {% endif %}
+            </div>
+            <div class="stat-label">Collection Ratio</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Create chart container
+    const chartContainer = document.createElement('div');
+    chartContainer.className = 'chart-container';
+    chartContainer.innerHTML = '<h4>📈 Revenue Last 7 Days</h4><canvas id="revenueChart" style="max-height: 300px;"></canvas>';
+    
+    // Insert chart after the first section
+    const firstSection = document.querySelector('.dashboard-stats');
+    firstSection.parentNode.insertBefore(chartContainer, firstSection.nextSibling);
+    
+    // Get revenue data from template
+    const revenueData = {
+        labels: [{% for day in daily_revenue %}'{{ day.date }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Daily Revenue (₹)',
+            data: [{% for day in daily_revenue %}{{ day.revenue }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true
+        }]
+    };
+    
+    // Create the chart
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: revenueData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Revenue: ₹' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Add payment status pie chart
+    const pieChartContainer = document.createElement('div');
+    pieChartContainer.className = 'chart-container';
+    pieChartContainer.innerHTML = '<h4>📊 Payment Status Distribution</h4><canvas id="paymentChart" style="max-height: 300px;"></canvas>';
+    chartContainer.parentNode.insertBefore(pieChartContainer, chartContainer.nextSibling);
+    
+    const paymentData = {
+        labels: ['Paid', 'Partial Paid', 'Pending'],
+        datasets: [{
+            data: [{{ payment_status.paid }}, {{ payment_status.partial }}, {{ payment_status.pending }}],
+            backgroundColor: [
+                '#28a745',
+                '#ffc107', 
+                '#dc3545'
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    };
+    
+    const paymentCtx = document.getElementById('paymentChart').getContext('2d');
+    new Chart(paymentCtx, {
+        type: 'doughnut',
+        data: paymentData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
