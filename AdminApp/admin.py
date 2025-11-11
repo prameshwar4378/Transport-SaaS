@@ -221,8 +221,187 @@ class BusinessAwareAdmin(admin.ModelAdmin):
             return True
         
         return False
+    # Create Resource class for Bill model
+class BillResource(resources.ModelResource):
+    party_name = resources.Field()
+    vehicle_number = resources.Field()
+    driver_name = resources.Field()
+    reference_name = resources.Field()
+    payment_status = resources.Field()
+    commission_status = resources.Field()
+    business_name = resources.Field()
     
+    class Meta:
+        model = Bill
+        fields = (
+            'bill_number',
+            'bill_date',
+            'party_name',
+            'vehicle_number', 
+            'driver_name',
+            'reference_name',
+            'from_location',
+            'to_location',
+            'material_type',
+            'rent_amount',
+            'advance_amount',
+            'pending_amount',
+            'commission',
+            'commission_charge',
+            'commission_received',
+            'commission_pending',
+            'commission_received_date',
+            'payment_status',
+            'commission_status',
+            'business_name',
+            'notes',
+            'created_at',
+        )
+        export_order = fields
     
+    def dehydrate_party_name(self, bill):
+        return bill.party.name if bill.party else "No Party"
+    
+    def dehydrate_vehicle_number(self, bill):
+        return bill.vehicle.vehicle_number if bill.vehicle else "No Vehicle"
+    
+    def dehydrate_driver_name(self, bill):
+        return bill.driver.driver_name if bill.driver else "No Driver"
+    
+    def dehydrate_reference_name(self, bill):
+        return bill.reference.owner_name if bill.reference else "No Reference"
+    
+    def dehydrate_payment_status(self, bill):
+        return bill.payment_status
+    
+    def dehydrate_commission_status(self, bill):
+        return bill.commission_status
+    
+    def dehydrate_business_name(self, bill):
+        return bill.business.business_name if bill.business else "No Business"
+
+# Create Resource class for VehicleOwner
+class VehicleOwnerResource(resources.ModelResource):
+    business_name = resources.Field()
+    total_vehicles_count = resources.Field()
+    
+    class Meta:
+        model = VehicleOwner
+        fields = (
+            'owner_name',
+            'owner_mobile_number',
+            'owner_alternate_mobile_number',
+            'business_name',
+            'total_vehicles_count',
+            'created_at',
+            'updated_at',
+        )
+        export_order = fields
+    
+    def dehydrate_business_name(self, vehicle_owner):
+        return vehicle_owner.business.business_name if vehicle_owner.business else "No Business"
+    
+    def dehydrate_total_vehicles_count(self, vehicle_owner):
+        return vehicle_owner.total_vehicles
+
+# Create Resource class for Vehicle
+class VehicleResource(resources.ModelResource):
+    owner_name = resources.Field()
+    owner_mobile = resources.Field()
+    business_name = resources.Field()
+    total_bills_count = resources.Field()
+    
+    class Meta:
+        model = Vehicle
+        fields = (
+            'vehicle_number',
+            'vehicle_name',
+            'model_name',
+            'owner_name',
+            'owner_mobile',
+            'business_name',
+            'total_bills_count',
+            'notes',
+            'created_at',
+            'updated_at',
+        )
+        export_order = fields
+    
+    def dehydrate_owner_name(self, vehicle):
+        return vehicle.owner.owner_name if vehicle.owner else "No Owner"
+    
+    def dehydrate_owner_mobile(self, vehicle):
+        return vehicle.owner.owner_mobile_number if vehicle.owner else "No Mobile"
+    
+    def dehydrate_business_name(self, vehicle):
+        return vehicle.business.business_name if vehicle.business else "No Business"
+    
+    def dehydrate_total_bills_count(self, vehicle):
+        return vehicle.total_bills
+
+# Create Resource class for Party
+class PartyResource(resources.ModelResource):
+    business_name = resources.Field()
+    total_bills_count = resources.Field()
+    total_amount = resources.Field()
+    
+    class Meta:
+        model = Party
+        fields = (
+            'name',
+            'gst_no',
+            'mobile',
+            'alternate_mobile',
+            'business_name',
+            'total_bills_count',
+            'total_amount',
+            'created_at',
+            'updated_at',
+        )
+        export_order = fields
+    
+    def dehydrate_business_name(self, party):
+        return party.business.business_name if party.business else "No Business"
+    
+    def dehydrate_total_bills_count(self, party):
+        return party.total_bills
+    
+    def dehydrate_total_amount(self, party):
+        from django.db.models import Sum
+        total = party.bills.aggregate(Sum('rent_amount'))['rent_amount__sum'] or 0
+        return total
+
+# Create Resource class for Driver
+class DriverResource(resources.ModelResource):
+    business_name = resources.Field()
+    total_bills_count = resources.Field()
+    total_trip_amount = resources.Field()
+    
+    class Meta:
+        model = Driver
+        fields = (
+            'driver_name',
+            'mobile',
+            'alternate_mobile',
+            'business_name',
+            'total_bills_count',
+            'total_trip_amount',
+            'created_at',
+            'updated_at',
+        )
+        export_order = fields
+    
+    def dehydrate_business_name(self, driver):
+        return driver.business.business_name if driver.business else "No Business"
+    
+    def dehydrate_total_bills_count(self, driver):
+        return driver.total_bills
+    
+    def dehydrate_total_trip_amount(self, driver):
+        from django.db.models import Sum
+        total = driver.bills.aggregate(Sum('rent_amount'))['rent_amount__sum'] or 0
+        return total
+       
 
 
 @admin.register(CustomUser)
@@ -497,10 +676,10 @@ class VehicleOwnerForm(forms.ModelForm):
         
         return cleaned_data
 
-
 @admin.register(VehicleOwner)
-class VehicleOwnerAdmin(BusinessAwareAdmin):
-    form = VehicleOwnerForm
+class VehicleOwnerAdmin(ExportMixin, BusinessAwareAdmin):
+    resource_class = VehicleOwnerResource
+    formats = [base_formats.XLSX, base_formats.CSV]
     
     list_display = (
         'owner_name', 
@@ -515,6 +694,23 @@ class VehicleOwnerAdmin(BusinessAwareAdmin):
     readonly_fields = ('photo_preview', 'total_vehicles_badge', 'created_at', 'updated_at')
     date_hierarchy = 'created_at'
     
+    # Override changelist to add custom export buttons
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['export_buttons'] = [
+            {
+                'label': '📤 Export Excel',
+                'url': f'{request.path}export/?format=xlsx',
+                'class': 'export-link',
+            },
+            {
+                'label': '📤 Export CSV', 
+                'url': f'{request.path}export/?format=csv',
+                'class': 'export-link',
+            },
+        ]
+        return super().changelist_view(request, extra_context=extra_context)
+
     fieldsets = (
         ('Basic Information', {
             'fields': (
@@ -573,9 +769,11 @@ class VehicleOwnerAdmin(BusinessAwareAdmin):
 
 
 
-
 @admin.register(Vehicle)
-class VehicleAdmin(BusinessAwareAdmin):
+class VehicleAdmin(ExportMixin, BusinessAwareAdmin):
+    resource_class = VehicleResource
+    formats = [base_formats.XLSX, base_formats.CSV]
+    
     list_display = (
         'vehicle_number', 
         'vehicle_name', 
@@ -591,6 +789,23 @@ class VehicleAdmin(BusinessAwareAdmin):
     list_select_related = ('owner', 'business')
     date_hierarchy = 'created_at'
     
+    # Override changelist to add custom export buttons
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['export_buttons'] = [
+            {
+                'label': '📤 Export Excel',
+                'url': f'{request.path}export/?format=xlsx',
+                'class': 'export-link',
+            },
+            {
+                'label': '📤 Export CSV', 
+                'url': f'{request.path}export/?format=csv',
+                'class': 'export-link',
+            },
+        ]
+        return super().changelist_view(request, extra_context=extra_context)
+
     fieldsets = (
         ('Vehicle Information', {
             'fields': ('vehicle_number', 'vehicle_name', 'model_name', 'owner')
@@ -624,7 +839,7 @@ class VehicleAdmin(BusinessAwareAdmin):
     
     def owner_link(self, obj):
         if obj.owner:
-            url = f"/admin/AdminApp/vehicleowner/{obj.owner.id}/change/"  # Fixed app name
+            url = f"/admin/AdminApp/vehicleowner/{obj.owner.id}/change/"
             return format_html(
                 '<a href="{}" style="color: #007bff; text-decoration: none;">{}</a>',
                 url,
@@ -633,7 +848,6 @@ class VehicleAdmin(BusinessAwareAdmin):
         return "No Owner"
     owner_link.short_description = 'Owner'
 
-    
     def owner_info(self, obj):
         if obj.owner:
             return f"{obj.owner.owner_name} - {obj.owner.owner_mobile_number}"
@@ -650,56 +864,17 @@ class VehicleAdmin(BusinessAwareAdmin):
         )
     total_bills_badge.short_description = 'Total Bills'
 
-    def owner_link(self, obj):
-        if obj.owner:
-            url = f"/admin/AdminApp/vehicleowner/{obj.owner.id}/change/"  # Changed from 'transport'
-            return format_html(
-                '<a href="{}" style="color: #007bff; text-decoration: none;">{}</a>',
-                url,
-                obj.owner.owner_name
-            )
-        return "No Owner"
-
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related('owner', 'business')
-
-    # def save_model(self, request, obj, form, change):
-    #     """
-    #     GUARANTEED business auto-setting
-    #     """
-    #     # FORCE SET BUSINESS for new objects
-    #     if not change:
-    #         # Method 1: Direct assignment
-    #         if hasattr(request.user, 'business') and request.user.business:
-    #             obj.business = request.user.business
-            
-    #         # Method 2: If still not set, get from user's business relation
-    #         if not obj.business_id and hasattr(request.user, 'business_id') and request.user.business_id:
-    #             obj.business_id = request.user.business_id
-            
-    #         # Method 3: Final fallback - get business from user object
-    #         if not obj.business_id and hasattr(request.user, 'business'):
-    #             from .models import Business
-    #             try:
-    #                 user_business = Business.objects.get(pk=request.user.business.pk)
-    #                 obj.business = user_business
-    #             except:
-    #                 pass
-        
-        # If business is still not set, we cannot save
-        if not obj.business_id:
-            from django.contrib import messages
-            messages.error(request, "Could not determine business. Please contact administrator.")
-            return
-        
-        super().save_model(request, obj, form, change)
         
             
-
 
 @admin.register(Party)
-class PartyAdmin(BusinessAwareAdmin):
+class PartyAdmin(ExportMixin, BusinessAwareAdmin):
+    resource_class = PartyResource
+    formats = [base_formats.XLSX, base_formats.CSV]
+    
     list_display = (
         'name', 
         'gst_no_formatted', 
@@ -714,6 +889,23 @@ class PartyAdmin(BusinessAwareAdmin):
     list_select_related = ('business',)
     date_hierarchy = 'created_at'
     
+    # Override changelist to add custom export buttons
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['export_buttons'] = [
+            {
+                'label': '📤 Export Excel',
+                'url': f'{request.path}export/?format=xlsx',
+                'class': 'export-link',
+            },
+            {
+                'label': '📤 Export CSV', 
+                'url': f'{request.path}export/?format=csv',
+                'class': 'export-link',
+            },
+        ]
+        return super().changelist_view(request, extra_context=extra_context)
+
     fieldsets = (
         ('Party Information', {
             'fields': ('name', 'gst_no', 'mobile', 'alternate_mobile', 'party_photo', 'photo_preview')
@@ -775,9 +967,11 @@ class PartyAdmin(BusinessAwareAdmin):
         qs = super().get_queryset(request)
         return qs.select_related('business')
     
-
 @admin.register(Driver)
-class DriverAdmin(BusinessAwareAdmin):
+class DriverAdmin(ExportMixin, BusinessAwareAdmin):
+    resource_class = DriverResource
+    formats = [base_formats.XLSX, base_formats.CSV]
+    
     list_display = (
         'driver_name', 
         'mobile_display', 
@@ -792,6 +986,23 @@ class DriverAdmin(BusinessAwareAdmin):
     list_select_related = ('business',)
     date_hierarchy = 'created_at'
     
+    # Override changelist to add custom export buttons
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['export_buttons'] = [
+            {
+                'label': '📤 Export Excel',
+                'url': f'{request.path}export/?format=xlsx',
+                'class': 'export-link',
+            },
+            {
+                'label': '📤 Export CSV', 
+                'url': f'{request.path}export/?format=csv',
+                'class': 'export-link',
+            },
+        ]
+        return super().changelist_view(request, extra_context=extra_context)
+
     fieldsets = (
         ('Driver Information', {
             'fields': (
@@ -859,85 +1070,19 @@ class DriverAdmin(BusinessAwareAdmin):
     
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.select_related('business')
+        return qs.select_related('business') 
 
-
-
-
-
-
-
-
-# Create a Resource class for Bill model
-class BillResource(resources.ModelResource):
-    party_name = resources.Field()
-    vehicle_number = resources.Field()
-    driver_name = resources.Field()
-    reference_name = resources.Field()
-    payment_status = resources.Field()
-    commission_status = resources.Field()
-    business_name = resources.Field()
-    
-    class Meta:
-        model = Bill
-        fields = (
-            'bill_number',
-            'bill_date',
-            'party_name',
-            'vehicle_number', 
-            'driver_name',
-            'reference_name',
-            'from_location',
-            'to_location',
-            'material_type',
-            'rent_amount',
-            'advance_amount',
-            'pending_amount',
-            'commission',
-            'commission_charge',
-            'commission_received',
-            'commission_pending',
-            'commission_received_date',
-            'payment_status',
-            'commission_status',
-            'business_name',
-            'notes',
-            'created_at',
-        )
-        export_order = fields
-    
-    def dehydrate_party_name(self, bill):
-        return bill.party.name if bill.party else "No Party"
-    
-    def dehydrate_vehicle_number(self, bill):
-        return bill.vehicle.vehicle_number if bill.vehicle else "No Vehicle"
-    
-    def dehydrate_driver_name(self, bill):
-        return bill.driver.driver_name if bill.driver else "No Driver"
-    
-    def dehydrate_reference_name(self, bill):
-        return bill.reference.owner_name if bill.reference else "No Reference"
-    
-    def dehydrate_payment_status(self, bill):
-        return bill.payment_status
-    
-    def dehydrate_commission_status(self, bill):
-        return bill.commission_status
-    
-    def dehydrate_business_name(self, bill):
-        return bill.business.business_name if bill.business else "No Business"
-    
 
 
 
 
 
 @admin.register(Bill)
-class BillAdmin(ExportMixin, BusinessAwareAdmin):  # Add ExportMixin
+class BillAdmin(ExportMixin, BusinessAwareAdmin):
     resource_class = BillResource
-    formats = [base_formats.XLSX, base_formats.CSV]  # Export formats
+    formats = [base_formats.XLSX, base_formats.CSV]
     
-    # Custom filter classes (your existing filters)
+    # Custom filter classes
     class PaymentStatusListFilter(admin.SimpleListFilter):
         title = 'Payment Status'
         parameter_name = 'payment_status'
@@ -1151,20 +1296,11 @@ class BillAdmin(ExportMixin, BusinessAwareAdmin):  # Add ExportMixin
         }),
     )
 
-
     list_select_related = ('party', 'vehicle', 'driver', 'reference', 'business')
     date_hierarchy = 'bill_date'
     ordering = ('-bill_date',)
     
-    actions = ['mark_as_paid', 'mark_commission_received', 'export_selected_bills']
-    
-    # Custom export action
-    def export_selected_bills(self, request, queryset):
-        """
-        Custom export action for selected bills
-        """
-        return self.export_action(request, queryset)
-    export_selected_bills.short_description = "📤 Export selected bills"
+    actions = ['mark_as_paid', 'mark_commission_received']
     
     # Override changelist to add custom export buttons
     def changelist_view(self, request, extra_context=None):
@@ -1186,13 +1322,7 @@ class BillAdmin(ExportMixin, BusinessAwareAdmin):  # Add ExportMixin
         
         return super().changelist_view(request, extra_context=extra_context)
 
-    # Add custom CSS for export buttons
-    class Media:
-        css = {
-            'all': ('admin/css/export-buttons.css',)
-        }
-
-    # Your existing methods (party_name, vehicle_display, etc.) remain the same
+    # Your existing methods
     def party_name(self, obj):
         if obj.party:
             url = f"/admin/AdminApp/party/{obj.party.id}/change/"
@@ -1240,7 +1370,7 @@ class BillAdmin(ExportMixin, BusinessAwareAdmin):  # Add ExportMixin
     
     def commission_amount_display(self, obj):
         if obj.commission_charge:
-            commission_formatted = f"{obj.commission_charge:,}"  # Fixed: removed extra 'com'
+            commission_formatted = f"{obj.commission_charge:,}"
             received_formatted = f"{obj.commission_pending:,}"
             
             return format_html(
@@ -1371,476 +1501,3 @@ class BillAdmin(ExportMixin, BusinessAwareAdmin):  # Add ExportMixin
         return list_filter
     
 
-
-# @admin.register(Bill)
-# class BillAdmin(BusinessAwareAdmin):
-#     # Custom filter classes
-#     class PaymentStatusListFilter(admin.SimpleListFilter):
-#         title = 'Payment Status'
-#         parameter_name = 'payment_status'
-        
-#         def lookups(self, request, model_admin):
-#             return [
-#                 ('paid', 'Paid'),
-#                 ('pending', 'Pending'),
-#                 ('partial', 'Partially Paid'),
-#             ]
-        
-#         def queryset(self, request, queryset):
-#             if self.value() == 'paid':
-#                 return queryset.filter(pending_amount=0)
-#             elif self.value() == 'pending':
-#                 return queryset.filter(advance_amount=0)
-#             elif self.value() == 'partial':
-#                 return queryset.filter(advance_amount__gt=0, pending_amount__gt=0)
-#             return queryset
-    
-#     class CommissionStatusListFilter(admin.SimpleListFilter):
-#         title = 'Commission Status'
-#         parameter_name = 'commission_status'
-        
-#         def lookups(self, request, model_admin):
-#             return [
-#                 ('paid', 'Commission Paid'),
-#                 ('pending', 'Commission Pending'),
-#                 ('partial', 'Commission Partial'),
-#                 ('none', 'No Commission'),
-#             ]
-        
-#         def queryset(self, request, queryset):
-#             if self.value() == 'paid':
-#                 return queryset.filter(commission_pending=0, commission_charge__gt=0)
-#             elif self.value() == 'pending':
-#                 return queryset.filter(commission_received=0, commission_charge__gt=0)
-#             elif self.value() == 'partial':
-#                 return queryset.filter(commission_received__gt=0, commission_pending__gt=0)
-#             elif self.value() == 'none':
-#                 return queryset.filter(commission_charge=0)
-#             return queryset
-    
-#     class DateRangeFilter(admin.SimpleListFilter):
-#         title = 'Bill Date Range'
-#         parameter_name = 'bill_date_range'
-        
-#         def lookups(self, request, model_admin):
-#             return [
-#                 ('today', '📅 Today'),
-#                 ('yesterday', '📅 Yesterday'),
-#                 ('this_week', '📅 This Week'),
-#                 ('last_week', '📅 Last Week'),
-#                 ('this_month', '📅 This Month'),
-#                 ('last_month', '📅 Last Month'),
-#                 ('this_year', '📅 This Year'),
-#                 ('last_7_days', '📅 Last 7 Days'),
-#                 ('last_30_days', '📅 Last 30 Days'),
-#                 ('last_90_days', '📅 Last 90 Days'),
-#             ]
-        
-#         def queryset(self, request, queryset):
-#             from django.utils import timezone
-#             from datetime import datetime, timedelta
-            
-#             today = timezone.now().date()
-            
-#             if self.value() == 'today':
-#                 return queryset.filter(bill_date=today)
-            
-#             elif self.value() == 'yesterday':
-#                 yesterday = today - timedelta(days=1)
-#                 return queryset.filter(bill_date=yesterday)
-            
-#             elif self.value() == 'this_week':
-#                 start_of_week = today - timedelta(days=today.weekday())
-#                 return queryset.filter(bill_date__gte=start_of_week)
-            
-#             elif self.value() == 'last_week':
-#                 start_of_last_week = today - timedelta(days=today.weekday() + 7)
-#                 end_of_last_week = start_of_last_week + timedelta(days=6)
-#                 return queryset.filter(bill_date__range=[start_of_last_week, end_of_last_week])
-            
-#             elif self.value() == 'this_month':
-#                 start_of_month = today.replace(day=1)
-#                 return queryset.filter(bill_date__gte=start_of_month)
-            
-#             elif self.value() == 'last_month':
-#                 first_day_of_this_month = today.replace(day=1)
-#                 last_day_of_last_month = first_day_of_this_month - timedelta(days=1)
-#                 first_day_of_last_month = last_day_of_last_month.replace(day=1)
-#                 return queryset.filter(bill_date__range=[first_day_of_last_month, last_day_of_last_month])
-            
-#             elif self.value() == 'this_year':
-#                 start_of_year = today.replace(month=1, day=1)
-#                 return queryset.filter(bill_date__gte=start_of_year)
-            
-#             elif self.value() == 'last_7_days':
-#                 start_date = today - timedelta(days=7)
-#                 return queryset.filter(bill_date__gte=start_date)
-            
-#             elif self.value() == 'last_30_days':
-#                 start_date = today - timedelta(days=30)
-#                 return queryset.filter(bill_date__gte=start_date)
-            
-#             elif self.value() == 'last_90_days':
-#                 start_date = today - timedelta(days=90)
-#                 return queryset.filter(bill_date__gte=start_date)
-            
-#             return queryset
-        
-#         def choices(self, changelist):
-#             from django.utils.encoding import force_str
-#             yield {
-#                 'selected': self.value() is None,
-#                 'query_string': changelist.get_query_string({}, [self.parameter_name]),
-#                 'display': '📅 All Dates',
-#             }
-#             for lookup, title in self.lookup_choices:
-#                 yield {
-#                     'selected': self.value() == force_str(lookup),
-#                     'query_string': changelist.get_query_string({self.parameter_name: lookup}, []),
-#                     'display': title,
-#                 }
-
-#     # Enhanced Date Range Filter with Custom Dates
-#     class CustomDateRangeFilter(admin.SimpleListFilter):
-#         title = 'Custom Date Range'
-#         parameter_name = 'custom_date_range'
-#         template = 'admin/filter.html'  # Use default filter template
-        
-#         def lookups(self, request, model_admin):
-#             # We'll handle custom dates via querystring, not lookups
-#             return []
-        
-#         def queryset(self, request, queryset):
-#             start_date = request.GET.get('start_date')
-#             end_date = request.GET.get('end_date')
-            
-#             if start_date and end_date:
-#                 try:
-#                     start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-#                     end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-#                     return queryset.filter(bill_date__range=[start_date, end_date])
-#                 except (ValueError, TypeError):
-#                     return queryset
-            
-#             return queryset
-        
-#         def choices(self, changelist):
-#             # This creates a custom filter option in the sidebar
-#             return []
-
-#     list_display = (
-#         'bill_number',
-#         'party_name',
-#         'vehicle_display',
-#         'driver_name',
-#         'trip_route_display',
-#         'commission_amount_display',
-#         'commission_status_badge',
-#         'payment_status_badge',
-#         'bill_date_formatted',
-#     )
-    
-#     list_filter = (
-#         DateRangeFilter,  # Predefined date ranges
-#         'bill_date',      # Default date filter (year, month, exact date)
-#         'business',
-#         'driver',
-#         'vehicle',
-#         'party',
-#         PaymentStatusListFilter,
-#         CommissionStatusListFilter,
-#     )
-    
-#     search_fields = (
-#         'bill_number',
-#         'party__name',
-#         'vehicle__vehicle_number',
-#         'driver__driver_name',
-#         'from_location',
-#         'to_location',
-#         'material_type'
-#     )
-    
-#     readonly_fields = (
-#         'bill_number',
-#         'pending_amount_display',
-#         'commission_pending_display',
-#         'payment_status_badge',
-#         'commission_status_badge',
-#         'trip_route_display',
-#         'photo_preview',
-#         'created_at_display',
-#         'updated_at_display'
-#     )
-    
-#     list_select_related = ('party', 'vehicle', 'driver', 'reference', 'business')
-#     date_hierarchy = 'bill_date'
-#     ordering = ('-bill_date',)
-    
-#     actions = ['mark_as_paid', 'mark_commission_received']
-    
-#     fieldsets = (
-#         ('Bill Information', {
-#             'fields': (
-#                 'bill_number',
-#                 'bill_date',
-#                 'party',
-#                 'driver',
-#                 'vehicle',
-#                 'reference'
-#             )
-#         }),
-#         ('Trip Details', {
-#             'fields': (
-#                 'from_location',
-#                 'to_location',
-#                 'trip_route_display',
-#                 'material_type'
-#             )
-#         }),
-#         ('Financial Details', {
-#             'fields': (
-#                 'rent_amount',
-#                 'advance_amount',
-#                 'pending_amount_display',
-#                 'payment_status_badge'
-#             )
-#         }),
-#         ('Commission Details', {
-#             'fields': (
-#                 'commission',
-#                 'commission_charge',
-#                 'commission_received',
-#                 'commission_pending_display',
-#                 'commission_status_badge',
-#                 'commission_received_date'
-#             )
-#         }),
-#         ('Media & Notes', {
-#             'fields': (
-#                 'loading_photo',
-#                 'unloading_photo',
-#                 'document_photo',
-#                 'photo_preview',
-#                 'notes'
-#             ),
-#             'classes': ('collapse',)
-#         }),
-#         ('System Information', {
-#             'fields': ('created_at_display', 'updated_at_display'),
-#             'classes': ('collapse',)
-#         }),
-#     )
-
-
-#     # Add custom JavaScript for date range inputs
-#     class Media:
-#         js = (
-#             'admin/js/calendar.js',  # Use Django's built-in calendar
-#         )
-    
-#     def changelist_view(self, request, extra_context=None):
-#         # Handle custom date range from URL parameters
-#         start_date = request.GET.get('start_date')
-#         end_date = request.GET.get('end_date')
-        
-#         if start_date and end_date:
-#             # Add custom context to show active date range
-#             extra_context = extra_context or {}
-#             extra_context['active_date_range'] = f"{start_date} to {end_date}"
-#             extra_context['start_date'] = start_date
-#             extra_context['end_date'] = end_date
-        
-#         return super().changelist_view(request, extra_context=extra_context)
-
-#     # Rest of your methods remain the same...
-#     def party_name(self, obj):
-#         if obj.party:
-#             url = f"/admin/AdminApp/party/{obj.party.id}/change/"
-#             return format_html(
-#                 '<a href="{}" style="color: #007bff; text-decoration: none; font-weight: 500;">{}</a>',
-#                 url,
-#                 obj.party.name
-#             )
-#         return "No Party"
-#     party_name.short_description = 'Party'
-    
-#     def vehicle_display(self, obj):
-#         if obj.vehicle:
-#             url = f"/admin/AdminApp/vehicle/{obj.vehicle.id}/change/"
-#             return format_html(
-#                 '<a href="{}" style="color: #28a745; text-decoration: none;"><code>{}</code></a>',
-#                 url,
-#                 obj.vehicle.vehicle_number
-#             )
-#         return "No Vehicle"
-#     vehicle_display.short_description = 'Vehicle'
-    
-#     def driver_name(self, obj):
-#         if obj.driver:
-#             url = f"/admin/AdminApp/driver/{obj.driver.id}/change/"
-#             return format_html(
-#                 '<a href="{}" style="color: #6f42c1; text-decoration: none;">{}</a>',
-#                 url,
-#                 obj.driver.driver_name
-#             )
-#         return "No Driver"
-#     driver_name.short_description = 'Driver'
-    
-#     def trip_route_display(self, obj):
-#         return format_html(
-#             '<div style="font-size: 12px; color: #495057;">'
-#             '<span style="color: #dc3545;">{}</span> '
-#             '<span style="color: #6c757d;">→</span> '
-#             '<span style="color: #28a745;">{}</span>'
-#             '</div>',
-#             obj.from_location,
-#             obj.to_location
-#         )
-#     trip_route_display.short_description = 'Route'
-    
-#     def commission_amount_display(self, obj):
-#         if obj.commission_charge:
-#             commission_formatted = f"{obj.commission_charge:,}"  # Fixed: removed extra 'com'
-#             received_formatted = f"{obj.commission_pending:,}"
-            
-#             return format_html(
-#                 '<div style="text-align: center;">'
-#                 '<div style="font-weight: 600; color: #17a2b8;">₹{}</div>'
-#                 '<div style="font-size: 11px; color: red;">Pending: ₹{}</div>'
-#                 '</div>',
-#                 commission_formatted,
-#                 received_formatted
-#             )
-#         return "No Commission"
-#     commission_amount_display.short_description = 'Commission'
-
-#     def pending_amount_display(self, obj):
-#         pending_formatted = f"{obj.pending_amount:,}"
-#         color = '#dc3545' if obj.pending_amount > 0 else '#28a745'
-        
-#         return format_html(
-#             '<span style="font-weight: 600; color: {};">₹{}</span>',
-#             color,
-#             pending_formatted
-#         )
-#     pending_amount_display.short_description = 'Pending Amount'
-    
-#     def commission_pending_display(self, obj):
-#         if obj.commission_charge:
-#             commission_formatted = f"{obj.commission_pending:,}"
-#             color = '#dc3545' if obj.commission_pending > 0 else '#28a745'
-            
-#             return format_html(
-#                 '<span style="font-weight: 600; color: {};">₹{}</span>',
-#                 color,
-#                 commission_formatted
-#             )
-#         return "No Commission"
-#     commission_pending_display.short_description = 'Commission Pending'
-    
-#     def payment_status_badge(self, obj):
-#         status = obj.payment_status
-#         colors = {
-#             'Paid': 'success',
-#             'Pending': 'danger',
-#             'Partially Paid': 'warning'
-#         }
-#         color = colors.get(status, 'secondary')
-#         return format_html(
-#             '<span class="badge badge-{}">{}</span>',
-#             color,
-#             status
-#         )
-#     payment_status_badge.short_description = 'Payment Status'
-    
-#     def commission_status_badge(self, obj):
-#         status = obj.commission_status
-#         colors = {
-#             'Commission Paid': 'success',
-#             'Commission Pending': 'danger',
-#             'Commission Partially Paid': 'warning',
-#             'No Commission': 'secondary'
-#         }
-#         color = colors.get(status, 'secondary')
-#         return format_html(
-#             '<span class="badge badge-{}">{}</span>',
-#             color,
-#             status
-#         )
-#     commission_status_badge.short_description = 'Commission Status'
-    
-#     def bill_date_formatted(self, obj):
-#         return obj.bill_date.strftime("%d %b %Y")
-#     bill_date_formatted.short_description = 'Bill Date'
-    
-#     def photo_preview(self, obj):
-#         if obj.loading_photo:
-#             return format_html(
-#                 '<img src="{}" width="80" height="60" style="border-radius: 6px; border: 2px solid #ddd;" />',
-#                 obj.loading_photo.url
-#             )
-#         return format_html(
-#             '<div style="width: 80px; height: 60px; border-radius: 6px; background: #f8f9fa; border: 2px dashed #dee2e6; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 12px;">No Photo</div>'
-#         )
-#     photo_preview.short_description = 'Loading Photo'
-    
-#     def created_at_display(self, obj):
-#         return obj.created_at.strftime("%d %b %Y %H:%M:%S")
-#     created_at_display.short_description = 'Created At'
-    
-#     def updated_at_display(self, obj):
-#         return obj.updated_at.strftime("%d %b %Y %H:%M:%S")
-#     updated_at_display.short_description = 'Updated At'
-    
-#     def mark_as_paid(self, request, queryset):
-#         from django.db.models import F
-#         updated = queryset.update(
-#             advance_amount=F('rent_amount'),
-#             pending_amount=0
-#         )
-#         self.message_user(
-#             request,
-#             f'Successfully marked {updated} bill(s) as paid.',
-#             messages.SUCCESS
-#         )
-#     mark_as_paid.short_description = "Mark selected bills as paid"
-    
-#     def mark_commission_received(self, request, queryset):
-#         from django.utils import timezone
-#         from django.db.models import F
-#         updated = queryset.update(
-#             commission_received=F('commission_charge'),
-#             commission_pending=0,
-#             commission_received_date=timezone.now().date()
-#         )
-#         self.message_user(
-#             request,
-#             f'Successfully marked commission as received for {updated} bill(s).',
-#             messages.SUCCESS
-#         )
-#     mark_commission_received.short_description = "Mark commission as received"
-    
-#     def get_queryset(self, request):
-#         qs = super().get_queryset(request)
-        
-#         # Handle custom date range filtering
-#         start_date = request.GET.get('start_date')
-#         end_date = request.GET.get('end_date')
-        
-#         if start_date and end_date:
-#             try:
-#                 from datetime import datetime
-#                 start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-#                 end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-#                 qs = qs.filter(bill_date__range=[start_date, end_date])
-#             except (ValueError, TypeError):
-#                 pass
-        
-#         return qs.select_related('party', 'vehicle', 'driver', 'reference', 'business')
-    
-#     def get_list_filter(self, request):
-#         list_filter = list(super().get_list_filter(request))
-#         if not request.user.is_system_admin:
-#             list_filter = [f for f in list_filter if f != 'business']
-#         return list_filter

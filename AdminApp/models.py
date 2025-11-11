@@ -657,25 +657,40 @@ class Bill(models.Model):
     def save(self, *args, **kwargs):
         # Auto-generate bill number if not set
         if not self.bill_number:
-            # Generate bill number specific to business
-            business_prefix = self.business.business_label if self.business and self.business.business_label else "BILL"
+            # Generate a prefix from business label
+            if self.business and self.business.business_label:
+                words = self.business.business_label.strip().split()
+
+                if len(words) == 1:
+                    # Single word → take first 3 letters
+                    business_prefix = words[0][:3].upper()
+                elif len(words) == 2:
+                    # Two words → take first letter of each
+                    business_prefix = (words[0][0] + words[1][0]).upper()
+                else:
+                    # Three or more → take first letter of each up to 3 letters
+                    business_prefix = ''.join(w[0] for w in words[:3]).upper()
+            else:
+                business_prefix = "BILL"
+
+            # Find the last bill for this business
             last_bill = Bill.objects.filter(business=self.business).order_by('-id').first()
-            
             if last_bill and last_bill.bill_number:
                 try:
-                    # Extract number and increment
                     last_number = int(last_bill.bill_number.split('-')[-1])
                     next_number = last_number + 1
                 except (ValueError, IndexError):
                     next_number = 1
             else:
                 next_number = 1
-                
+
+            # Assign formatted bill number
             self.bill_number = f"{business_prefix}-{str(next_number).zfill(4)}"
-        
+
         # Ensure calculations are done before saving
         self.clean()
         super().save(*args, **kwargs)
+
 
     def get_business(self):
         return self.business

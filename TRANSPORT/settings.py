@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'AdminApp',
     'import_export',
+    'debug_toolbar',
 ]
 
 MIDDLEWARE = [
