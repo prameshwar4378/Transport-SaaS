@@ -870,6 +870,83 @@ class VehicleAdmin(ExportMixin, BusinessAwareAdmin):
         
             
 
+
+# admin.py - PartyAdmin
+class PartyForm(forms.ModelForm):
+    class Meta:
+        model = Party
+        fields = '__all__'
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        name = cleaned_data.get('name')
+        gst_no = cleaned_data.get('gst_no')
+        mobile = cleaned_data.get('mobile')
+        alternate_mobile = cleaned_data.get('alternate_mobile')
+        business = cleaned_data.get('business')
+        
+        # If business not in form data, get from request
+        if not business and hasattr(self, 'request') and self.request.user.business:
+            business = self.request.user.business
+            cleaned_data['business'] = business
+        
+        # Validate name uniqueness
+        if name and business:
+            queryset = Party.objects.filter(business=business, name=name)
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            if queryset.exists():
+                self.add_error('name', 
+                    f'Party with name "{name}" already exists in your business.')
+        
+        # Validate GST uniqueness
+        if gst_no:
+            gst_no = gst_no.strip().upper()
+            queryset = Party.objects.filter(gst_no=gst_no)
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            if queryset.exists():
+                self.add_error('gst_no',
+                    f'GST number {gst_no} is already registered with another party.')
+        
+        # Validate mobile conflicts
+        if mobile and business:
+            # Check if mobile exists as primary in same business
+            primary_queryset = Party.objects.filter(business=business, mobile=mobile)
+            # Check if mobile exists as alternate in same business
+            alternate_queryset = Party.objects.filter(business=business, alternate_mobile=mobile)
+            
+            if self.instance and self.instance.pk:
+                primary_queryset = primary_queryset.exclude(pk=self.instance.pk)
+                alternate_queryset = alternate_queryset.exclude(pk=self.instance.pk)
+            
+            if primary_queryset.exists():
+                self.add_error('mobile',
+                    f'Mobile {mobile} is already registered as primary mobile for another party.')
+            elif alternate_queryset.exists():
+                self.add_error('mobile',
+                    f'Mobile {mobile} is already registered as alternate mobile for another party.')
+        
+        # Validate alternate mobile conflicts
+        if alternate_mobile and business:
+            primary_queryset = Party.objects.filter(business=business, mobile=alternate_mobile)
+            alternate_queryset = Party.objects.filter(business=business, alternate_mobile=alternate_mobile)
+            
+            if self.instance and self.instance.pk:
+                primary_queryset = primary_queryset.exclude(pk=self.instance.pk)
+                alternate_queryset = alternate_queryset.exclude(pk=self.instance.pk)
+            
+            if primary_queryset.exists():
+                self.add_error('alternate_mobile',
+                    f'This mobile is already registered as primary mobile for another party.')
+            elif alternate_queryset.exists():
+                self.add_error('alternate_mobile',
+                    f'This mobile is already registered as alternate mobile for another party.')
+        
+        return cleaned_data
+    
+
+
 @admin.register(Party)
 class PartyAdmin(ExportMixin, BusinessAwareAdmin):
     resource_class = PartyResource
@@ -966,7 +1043,42 @@ class PartyAdmin(ExportMixin, BusinessAwareAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related('business')
+
+    def get_form(self, request, obj=None, **kwargs):
+        kwargs['form'] = PartyForm
+        form = super().get_form(request, obj, **kwargs)
+        form.request = request  # Pass request to form
+        return form
     
+
+class DriverForm(forms.ModelForm):
+    class Meta:
+        model = Driver
+        fields = '__all__'
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        mobile = cleaned_data.get('mobile')
+        alternate_mobile = cleaned_data.get('alternate_mobile')
+        business = cleaned_data.get('business')
+        
+        # If business not in form data, get from request
+        if not business and hasattr(self, 'request') and self.request.user.business:
+            business = self.request.user.business
+            cleaned_data['business'] = business
+        
+        # Validate mobile uniqueness
+        if mobile and business:
+            queryset = Driver.objects.filter(business=business, mobile=mobile)
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            if queryset.exists():
+                self.add_error('mobile', 
+                    f'Driver with mobile {mobile} already exists in your business.')
+ 
+        return cleaned_data
+    
+
 @admin.register(Driver)
 class DriverAdmin(ExportMixin, BusinessAwareAdmin):
     resource_class = DriverResource
@@ -1071,6 +1183,12 @@ class DriverAdmin(ExportMixin, BusinessAwareAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related('business') 
+    
+    def get_form(self, request, obj=None, **kwargs):
+        kwargs['form'] = DriverForm
+        form = super().get_form(request, obj, **kwargs)
+        form.request = request  # Pass request to form
+        return form
 
 
 

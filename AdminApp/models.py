@@ -363,24 +363,152 @@ class Party(models.Model):
  
 
     def clean(self):
-        # Validate GST number format if provided
-        if self.gst_no:
-            if len(self.gst_no) != 15:
-                raise ValidationError({'gst_no': 'GST number must be exactly 15 characters long.'})
-            
-        # Validate unique name per business - FIXED
-        if self.name and self.business_id:  # Use business_id instead of business
-            queryset = Party.objects.filter(business_id=self.business_id, name=self.name)
+        """Comprehensive validation for Party model"""
+        super().clean()
+        
+        # Validate name uniqueness per business
+        self._validate_name_unique()
+        
+        # Validate GST number uniqueness (global)
+        self._validate_gst_unique()
+        
+        # Validate mobile numbers
+        self._validate_mobile_numbers()
+    
+    def _validate_name_unique(self):
+        """Validate party name is unique within business"""
+        if self.name and self.business_id:
+            queryset = Party.objects.filter(
+                business_id=self.business_id,
+                name=self.name
+            )
             if self.pk:
                 queryset = queryset.exclude(pk=self.pk)
+            
             if queryset.exists():
                 raise ValidationError({
-                    'name': 'A party with this name already exists in this business.'
+                    'name': f'Party with name "{self.name}" already exists in your business.'
                 })
+    
+    def _validate_gst_unique(self):
+        """Validate GST number is globally unique"""
+        if self.gst_no:
+            # Remove spaces and convert to uppercase
+            self.gst_no = self.gst_no.strip().upper()
+            
+            queryset = Party.objects.filter(gst_no=self.gst_no)
+            if self.pk:
+                queryset = queryset.exclude(pk=self.pk)
+            
+            if queryset.exists():
+                raise ValidationError({
+                    'gst_no': f'GST number {self.gst_no} is already registered with another party.'
+                })
+    
+    def _validate_mobile_numbers(self):
+        """Validate mobile and alternate mobile"""
+        if self.mobile:
+            # Validate mobile format
+            validate_mobile_number(self.mobile)
+            
+            # Validate mobile doesn't conflict within business
+            self._validate_mobile_conflict('mobile', self.mobile)
+        
+        if self.alternate_mobile:
+            # Validate alternate mobile format
+            validate_mobile_number(self.alternate_mobile)
+            
+            # Validate alternate mobile doesn't conflict
+            self._validate_mobile_conflict('alternate_mobile', self.alternate_mobile)
+        
+        # Validate mobile and alternate_mobile are not same
+        if self.mobile and self.alternate_mobile and self.mobile == self.alternate_mobile:
+            raise ValidationError({
+                'alternate_mobile': 'Alternate mobile cannot be same as primary mobile.'
+            })
+    
+    def _validate_mobile_conflict(self, field_name, mobile_value):
+        """Validate mobile doesn't conflict with any mobile in same business"""
+        if not mobile_value or not self.business_id:
+            return
+        
+        # Check against primary mobile numbers
+        primary_queryset = Party.objects.filter(
+            business_id=self.business_id,
+            mobile=mobile_value
+        )
+        
+        # Check against alternate mobile numbers  
+        alternate_queryset = Party.objects.filter(
+            business_id=self.business_id,
+            alternate_mobile=mobile_value
+        )
+        
+        if self.pk:
+            primary_queryset = primary_queryset.exclude(pk=self.pk)
+            alternate_queryset = alternate_queryset.exclude(pk=self.pk)
+        
+        if primary_queryset.exists():
+            raise ValidationError({
+                field_name: f'Mobile number {mobile_value} is already registered as primary mobile for another party.'
+            })
+        
+        if alternate_queryset.exists():
+            raise ValidationError({
+                field_name: f'Mobile number {mobile_value} is already registered as alternate mobile for another party.'
+            })
 
+    def save(self, *args, **kwargs):
+        """Ensure business is set and validations pass"""
+        # Set business from user if not set (for new objects)
+        if not self.pk and not self.business_id:
+            try:
+                from crum import get_current_user
+                current_user = get_current_user()
+                if current_user and hasattr(current_user, 'business') and current_user.business:
+                    self.business = current_user.business
+            except Exception:
+                pass  # Business will be set by admin save_model
+        
+        # Convert empty strings to None for optional fields
+        self.mobile = self.mobile or None
+        self.alternate_mobile = self.alternate_mobile or None
+        self.gst_no = self.gst_no or None
+        
+        # Clean GST number format
+        if self.gst_no:
+            self.gst_no = self.gst_no.strip().upper()
+        
+        # Run full validation
+        self.clean()
+        
+        super().save(*args, **kwargs)
+
+        
     class Meta:
         verbose_name_plural = "Parties"
         unique_together = ['business', 'name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['business', 'name'],
+                name='unique_party_name_business'
+            ),
+            models.UniqueConstraint(
+                fields=['gst_no'],
+                name='unique_party_gst',
+                condition=models.Q(gst_no__isnull=False)
+            ),
+            models.UniqueConstraint(
+                fields=['business', 'mobile'],
+                name='unique_party_mobile',
+                condition=models.Q(mobile__isnull=False)
+            ),
+            models.UniqueConstraint(
+                fields=['business', 'alternate_mobile'],
+                name='unique_party_alternate_mobile', 
+                condition=models.Q(alternate_mobile__isnull=False)
+            ),
+        ]
 
 
 
@@ -429,18 +557,103 @@ class Driver(models.Model):
     total_bills.fget.short_description = 'Total Bills'
 
     def clean(self):
-        # Validate unique mobile number per business - FIXED
-        if self.mobile and self.business_id:
-            queryset = Driver.objects.filter(business_id=self.business_id, mobile=self.mobile)
-            if self.pk:
-                queryset = queryset.exclude(pk=self.pk)
-            if queryset.exists():
+        """Comprehensive validation for Driver model"""
+        super().clean()
+        
+        # Handle mobile validation
+        if self.mobile:
+            # Validate mobile doesn't exist in same business
+            self._validate_mobile_unique('mobile', self.mobile)
+            
+            # Validate mobile and alternate_mobile are not same
+            if self.mobile == self.alternate_mobile:
                 raise ValidationError({
-                    'mobile': 'This mobile number is already registered with another driver in this business.'
+                    'alternate_mobile': 'Alternate mobile cannot be same as primary mobile.'
                 })
+        
+        # # Handle alternate mobile validation  
+        # if self.alternate_mobile:
+        #     # Validate alternate mobile doesn't exist as primary mobile in same business
+        #     self._validate_mobile_unique('alternate_mobile', self.alternate_mobile)
+            
+        #     # Validate alternate mobile doesn't match any other driver's primary mobile
+        #     queryset = Driver.objects.filter(
+        #         business_id=self.business_id,
+        #         mobile=self.alternate_mobile
+        #     )
+        #     if self.pk:
+        #         queryset = queryset.exclude(pk=self.pk)
+        #     if queryset.exists():
+        #         raise ValidationError({
+        #             'alternate_mobile': 'This mobile number is already registered as primary mobile for another driver.'
+        #         })
 
+    def _validate_mobile_unique(self, field_name, mobile_value):
+        """Helper method to validate mobile uniqueness"""
+        if not mobile_value or not self.business_id:
+            return
+            
+        # Check against primary mobile numbers
+        mobile_queryset = Driver.objects.filter(
+            business_id=self.business_id,
+            mobile=mobile_value
+        )
+        
+        # Check against alternate mobile numbers  
+        alternate_queryset = Driver.objects.filter(
+            business_id=self.business_id,
+            alternate_mobile=mobile_value
+        )
+        
+        if self.pk:
+            mobile_queryset = mobile_queryset.exclude(pk=self.pk)
+            alternate_queryset = alternate_queryset.exclude(pk=self.pk)
+        
+        if mobile_queryset.exists():
+            raise ValidationError({
+                field_name: f'Mobile number {mobile_value} is already registered as primary mobile for another driver.'
+            })
+        
+        # if alternate_queryset.exists():
+        #     raise ValidationError({
+        #         field_name: f'Mobile number {mobile_value} is already registered as alternate mobile for another driver.'
+        #     })
+ 
+    def save(self, *args, **kwargs):
+        """Ensure business is set and validations pass"""
+        # Set business from user if not set (for new objects)
+        if not self.pk and not self.business_id:
+            try:
+                from crum import get_current_user
+                current_user = get_current_user()
+                if current_user and hasattr(current_user, 'business') and current_user.business:
+                    self.business = current_user.business
+            except Exception:
+                pass  # Business will be set by admin save_model
+        
+        # Convert empty strings to None for mobile fields
+        self.mobile = self.mobile or None
+        self.alternate_mobile = self.alternate_mobile or None
+        
+        # Run full validation
+        self.clean()
+        
+        super().save(*args, **kwargs)
+        
     class Meta:
         unique_together = ['business', 'mobile']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['business', 'mobile'],
+                name='unique_driver_mobile',
+                condition=models.Q(mobile__isnull=False)
+            ),
+            models.UniqueConstraint(
+                fields=['business', 'alternate_mobile'], 
+                name='unique_driver_alternate_mobile',
+                condition=models.Q(alternate_mobile__isnull=False)
+            ),
+        ]
 
 
 
