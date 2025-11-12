@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }}</title>
+    <meta charset="utf-8">
+    <style>
+        @media print {
+            @page {
+                size: A4;
+                margin: 0.5cm;
+            }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-size: 12px;
+                line-height: 1.4;
+                color: #333;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .break-after {
+                page-break-after: always;
+            }
+        }
+        @media screen {
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+                max-width: 800px;
+                margin: 20px auto;
+                padding: 20px;
+                background: #f8f9fa;
+            }
+            .print-container {
+                background: white;
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            }
+        }
+
+        /* Professional Header Styles */
+        .letterhead {
+            border-bottom: 3px double #2c5aa0;
+            padding-bottom: 20px;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .company-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .company-info {
+            flex: 1;
+        }
+
+        .company-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            border: 2px solid #2c5aa0;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #2c5aa0;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c5aa0;
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .company-tagline {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+            margin: 0 0 15px 0;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: #555;
+        }
+
+        .contact-icon {
+            width: 14px;
+            text-align: center;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+
+        .bill-header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .bill-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 5px 0;
+            letter-spacing: 1px;
+        }
+
+        .bill-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        /* Bill Content Styles */
+        .bill-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin: 25px 0;
+        }
+
+        .info-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #2c5aa0;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #2c5aa0;
+            margin: 0 0 12px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e0e0e0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .field-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            padding: 3px 0;
+        }
+
+        .field-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 140px;
+        }
+
+        .field-value {
+            text-align: right;
+            font-weight: 500;
+        }
+
+        .amount {
+            font-weight: 700;
+            color: #2c5aa0;
+        }
+
+        .financial-section {
+            background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+            border: 1px solid #d1e3ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .total-section {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-paid { background: #d4edda; color: #155724; }
+        .status-pending { background: #f8d7da; color: #721c24; }
+        .status-partial { background: #fff3cd; color: #856404; }
+
+        .notes-section {
+            background: #fffbf0;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px dashed #ccc;
+            color: #666;
+            font-size: 10px;
+        }
+
+        .signature-area {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+        }
+
+        .signature-line {
+            border-top: 1px solid #333;
+            padding-top: 5px;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        /* Print Controls */
+        .print-controls {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .print-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+        }
+
+        .print-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .print-btn.close {
+            background: #6c757d;
+        }
+
+        .print-btn.close:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-container">
+        <!-- Print Controls -->
+        <div class="print-controls no-print">
+            <button class="print-btn" onclick="window.print()">🖨️ Print Bill</button>
+            <button class="print-btn close" onclick="window.close()">✕ Close</button>
+        </div>
+
+        <!-- Professional Letterhead -->
+        <!-- Professional Letterhead -->
+            <div class="letterhead">
+                <div class="company-header">
+                    <div class="company-info">
+                        <h1 class="company-name">{{ bill.business.business_name }}</h1>
+                        <p class="company-tagline">TRANSPORT & LOGISTICS SERVICES</p>
+                        
+                        <div class="contact-grid"> 
+                            <!-- Primary Mobile -->
+                            <div class="contact-item">
+                                <span class="contact-icon">📞</span>
+                                <span>{{ bill.business.mobile_number }}</span>
+                            </div>
+                            
+                            <!-- Alternate Mobile -->
+                            {% if bill.business.alternate_mobile_number %}
+                            <div class="contact-item">
+                                <span class="contact-icon">📱</span>
+                                <span>{{ bill.business.alternate_mobile_number }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Email -->
+                            {% if bill.business.email %}
+                            <div class="contact-item">
+                                <span class="contact-icon">✉️</span>
+                                <span>{{ bill.business.email }}</span>
+                            </div>
+                            {% endif %}
+                              
+                        </div>
+                        
+                        <!-- Address -->
+                        {% if bill.business.address %}
+                        <div class="contact-item" style="margin-top: 8px;">
+                            <span class="contact-icon">📍</span>
+                            <span style="font-size: 10px;">{{ bill.business.address }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Logo Area -->
+                    <div class="company-logo">
+                        {% if bill.business.business_logo %}
+                        <img src="{{ bill.business.business_logo.url }}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">
+                        {% else %}
+                        {{ bill.business.business_name|slice:":2"|upper }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        <!-- Bill Header -->
+        <div class="bill-header">
+            <h1 class="bill-title">TRANSPORT BILL</h1>
+            <p class="bill-subtitle">Original Copy</p>
+        </div>
+
+        <!-- Bill Information -->
+        <div class="bill-content">
+            <!-- Left Column -->
+            <div>
+                <div class="info-section">
+                    <h3 class="section-title">Bill Information</h3>
+                    <div class="field-row">
+                        <span class="field-label">Bill Number:</span>
+                        <span class="field-value">{{ bill.bill_number }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Bill Date:</span>
+                        <span class="field-value">{{ bill.bill_date|date:"d M Y" }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Generated On:</span>
+                        <span class="field-value">{% now "d M Y H:i" %}</span>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h3 class="section-title">Party Details</h3>
+                    <div class="field-row">
+                        <span class="field-label">Party Name:</span>
+                        <span class="field-value">{{ bill.party.name|default:"-" }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Mobile:</span>
+                        <span class="field-value">{{ bill.party.mobile|default:"-" }}</span>
+                    </div>
+                    {% if bill.party.gst_no %}
+                    <div class="field-row">
+                        <span class="field-label">GSTIN:</span>
+                        <span class="field-value">{{ bill.party.gst_no }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div>
+                <div class="info-section">
+                    <h3 class="section-title">Trip Details</h3>
+                    <div class="field-row">
+                        <span class="field-label">From:</span>
+                        <span class="field-value">{{ bill.from_location }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">To:</span>
+                        <span class="field-value">{{ bill.to_location }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Material:</span>
+                        <span class="field-value">{{ bill.material_type|default:"General Goods" }}</span>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h3 class="section-title">Vehicle & Crew</h3>
+                    <div class="field-row">
+                        <span class="field-label">Vehicle No:</span>
+                        <span class="field-value">{{ bill.vehicle.vehicle_number }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Driver:</span>
+                        <span class="field-value">{{ bill.driver.driver_name|default:"-" }}</span>
+                    </div>
+                    {% if bill.reference %}
+                    <div class="field-row">
+                        <span class="field-label">Reference:</span>
+                        <span class="field-value">{{ bill.reference.owner_name }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Details -->
+        <div class="financial-section">
+            <h3 class="section-title" style="text-align: center; color: #2c5aa0;">FINANCIAL DETAILS</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                <div>
+                    <div class="field-row">
+                        <span class="field-label">Rent Amount:</span>
+                        <span class="field-value amount">₹{{ bill.rent_amount|floatformat:0 }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Advance Paid:</span>
+                        <span class="field-value amount">₹{{ bill.advance_amount|floatformat:0 }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Pending Amount:</span>
+                        <span class="field-value amount">₹{{ bill.pending_amount|floatformat:0 }}</span>
+                    </div>
+                </div>
+                
+                {% if bill.commission_charge %}
+                <div>
+                    <div class="field-row">
+                        <span class="field-label">Commission:</span>
+                        <span class="field-value amount">₹{{ bill.commission_charge|floatformat:0 }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Commission Received:</span>
+                        <span class="field-value amount">₹{{ bill.commission_received|floatformat:0 }}</span>
+                    </div>
+                    <div class="field-row">
+                        <span class="field-label">Commission Pending:</span>
+                        <span class="field-value amount">₹{{ bill.commission_pending|floatformat:0 }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Status Summary -->
+        <div class="total-section">
+            <div class="total-row">
+                <span>Payment Status:</span>
+                <span class="status-badge status-{{ bill.payment_status|lower|cut:' ' }}">{{ bill.payment_status }}</span>
+            </div>
+            {% if bill.commission_status != 'No Commission' %}
+            <div class="total-row">
+                <span>Commission Status:</span>
+                <span class="status-badge status-{{ bill.commission_status|lower|cut:' ' }}">{{ bill.commission_status }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Notes Section -->
+        {% if bill.notes %}
+        <div class="notes-section">
+            <h3 class="section-title">Additional Notes</h3>
+            <p style="margin: 0; font-style: italic;">{{ bill.notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Signatures -->
+        <div class="signature-area">
+            <div>
+                <div class="signature-line">Authorized Signature</div>
+                <div style="font-size: 10px; text-align: center; margin-top: 5px;">For {{ bill.business.business_name }}</div>
+            </div>
+            <div>
+                <div class="signature-line">Customer Signature</div>
+                <div style="font-size: 10px; text-align: center; margin-top: 5px;">Received By</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <!-- <div class="footer">
+            <p>This is a computer generated bill. No signature required for electronic copy.</p>
+            <p>Generated by: {{ request.user.get_full_name|default:request.user.username }} | Page 1 of 1</p>
+        </div> -->
+    </div>
+
+    <script>
+        // Auto-print when page loads in popup
+        window.onload = function() {
+            if (window.opener && !window.location.search.includes('noprint=1')) {
+                setTimeout(function() {
+                    window.print();
+                }, 1000);
+            }
+        };
+
+        // Close window after print if it's a popup
+        window.onafterprint = function() {
+            if (window.opener) {
+                setTimeout(function() {
+                    if (!window.location.search.includes('noclose=1')) {
+                        window.close();
+                    }
+                }, 1000);
+            }
+        };
+    </script>
+</body>
+</html>

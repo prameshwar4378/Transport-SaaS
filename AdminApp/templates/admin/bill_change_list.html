@@ -1,87 +1,57 @@
 {% extends "admin/change_list.html" %}
-{% load i18n admin_urls %}
+{% load static %}
 
 {% block extrahead %}
 {{ block.super }}
 <style>
-    .date-range-filter {
-        background: #f8f9fa;
-        padding: 15px;
-        margin: 10px 0;
-        border-radius: 5px;
-        border: 1px solid #dee2e6;
+    .print-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 4px 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
     }
-    .date-range-filter h3 {
-        margin-top: 0;
-        color: #495057;
+    
+    .print-btn:hover {
+        background: #218838;
+        transform: scale(1.1);
     }
-    .date-range-inputs {
-        display: flex;
-        gap: 15px;
-        align-items: end;
-    }
-    .date-input-group {
-        display: flex;
-        flex-direction: column;
-    }
-    .date-input-group label {
-        font-weight: 600;
-        margin-bottom: 5px;
-        color: #495057;
-    }
-    .date-range-buttons {
-        margin-top: 10px;
+    
+    .print-btn:active {
+        transform: scale(0.95);
     }
 </style>
-{% endblock %}
 
-{% block filters %}
-{{ block.super }}
+<script>
+// Print individual bill
+function printBill(billId) {
+    // Open print page in new window
+    const printUrl = `{% url 'bill_print' 0 %}`.replace('0', billId);
+    const printWindow = window.open(printUrl, '_blank', 'width=800,height=600');
+    
+    // Focus the new window
+    if (printWindow) {
+        printWindow.focus();
+    }
+}
 
-{% if custom_date_range %}
-<div class="date-range-filter">
-    <h3>📅 Custom Date Range Filter</h3>
-    <form method="get">
-        <!-- Preserve existing filters -->
-        {% for key, value in request.GET.items %}
-            {% if key != 'start_date' and key != 'end_date' and key != 'bill_date_range' %}
-                <input type="hidden" name="{{ key }}" value="{{ value }}">
-            {% endif %}
-        {% endfor %}
-        
-        <div class="date-range-inputs">
-            <div class="date-input-group">
-                <label for="start_date">Start Date:</label>
-                <input type="date" name="start_date" id="start_date" 
-                       value="{{ request.GET.start_date }}" 
-                       class="form-control" style="width: 200px;">
-            </div>
-            <div class="date-input-group">
-                <label for="end_date">End Date:</label>
-                <input type="date" name="end_date" id="end_date" 
-                       value="{{ request.GET.end_date }}" 
-                       class="form-control" style="width: 200px;">
-            </div>
-            <div class="date-input-group">
-                <input type="hidden" name="bill_date_range" value="custom">
-                <button type="submit" class="btn btn-primary" style="height: 38px;">
-                    Filter by Date Range
-                </button>
-            </div>
-        </div>
-        
-        {% if request.GET.start_date and request.GET.end_date %}
-        <div class="date-range-buttons">
-            <small class="text-muted">
-                Showing bills from <strong>{{ request.GET.start_date }}</strong> to <strong>{{ request.GET.end_date }}</strong>
-            </small>
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'start_date' and key != 'end_date' and key != 'bill_date_range' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" 
-               class="btn btn-sm btn-outline-secondary" style="margin-left: 10px;">
-                Clear Date Range
-            </a>
-        </div>
-        {% endif %}
-    </form>
-</div>
-{% endif %}
+// Auto-print after save if needed
+document.addEventListener('DOMContentLoaded', function() {
+    // Check URL for auto-print parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const autoPrintId = urlParams.get('_print');
+    
+    if (autoPrintId) {
+        setTimeout(() => {
+            printBill(autoPrintId);
+            // Clean URL
+            const newUrl = window.location.pathname + window.location.search.replace('&_print=' + autoPrintId, '').replace('?_print=' + autoPrintId, '');
+            window.history.replaceState({}, document.title, newUrl);
+        }, 1000);
+    }
+});
+</script>
 {% endblock %}

@@ -20,8 +20,6 @@ from django.http import HttpResponse
 import csv
 import xlwt
 from datetime import datetime
-
-
  
 
 class BusinessAwareAdmin(admin.ModelAdmin):
@@ -641,15 +639,47 @@ class BusinessAdmin(admin.ModelAdmin):
 
 from django import forms
 
+# class VehicleOwnerForm(forms.ModelForm):
+#     class Meta:
+#         model = VehicleOwner
+#         fields = '__all__'
+    
+#     def __init__(self, *args, **kwargs):
+#         self.request = kwargs.pop('request', None)
+#         super().__init__(*args, **kwargs)
+    
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         mobile_number = cleaned_data.get('owner_mobile_number')
+        
+#         # Only validate if we have mobile number and request context
+#         if (mobile_number and 
+#             self.request and 
+#             hasattr(self.request.user, 'business') and 
+#             self.request.user.business):
+            
+#             queryset = VehicleOwner.objects.filter(
+#                 business=self.request.user.business,
+#                 owner_mobile_number=mobile_number
+#             )
+            
+#             # Exclude current instance when editing
+#             if self.instance and self.instance.pk:
+#                 queryset = queryset.exclude(pk=self.instance.pk)
+            
+#             if queryset.exists():
+#                 raise forms.ValidationError({
+#                     'owner_mobile_number': f'Mobile number {mobile_number} is already registered with another owner in your business.'
+#                 })
+        
+#         return cleaned_data
+
+
 class VehicleOwnerForm(forms.ModelForm):
     class Meta:
         model = VehicleOwner
         fields = '__all__'
-    
-    def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop('request', None)
-        super().__init__(*args, **kwargs)
-    
+
     def clean(self):
         cleaned_data = super().clean()
         mobile_number = cleaned_data.get('owner_mobile_number')
@@ -674,7 +704,8 @@ class VehicleOwnerForm(forms.ModelForm):
                     'owner_mobile_number': f'Mobile number {mobile_number} is already registered with another owner in your business.'
                 })
         
-        return cleaned_data
+        return cleaned_data    
+    
 
 @admin.register(VehicleOwner)
 class VehicleOwnerAdmin(ExportMixin, BusinessAwareAdmin):
@@ -762,6 +793,77 @@ class VehicleOwnerAdmin(ExportMixin, BusinessAwareAdmin):
         form = super().get_form(request, obj, **kwargs)
         form.request = request
         return form
+    
+
+
+
+
+
+
+
+
+# admin.py - VehicleAdmin
+class VehicleForm(forms.ModelForm):
+    class Meta:
+        model = Vehicle
+        fields = '__all__'
+    
+    def __init__(self, *args, **kwargs):
+        # Extract request before calling super
+        self.request = kwargs.pop('request', None)
+        super().__init__(*args, **kwargs)
+        
+        # Limit owner choices to current business
+        if self.request and hasattr(self.request.user, 'business') and self.request.user.business:
+            self.fields['owner'].queryset = VehicleOwner.objects.filter(
+                business=self.request.user.business
+            )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        vehicle_number = cleaned_data.get('vehicle_number')
+        owner = cleaned_data.get('owner')
+        business = cleaned_data.get('business')
+        
+        # SAFE way to get business from request
+        if not business and self.request and hasattr(self.request.user, 'business') and self.request.user.business:
+            business = self.request.user.business
+            cleaned_data['business'] = business
+        
+        # Validate vehicle number uniqueness
+        if vehicle_number:
+            vehicle_number = vehicle_number.upper().replace(' ', '')
+            cleaned_data['vehicle_number'] = vehicle_number
+            
+            # Global uniqueness check
+            queryset = Vehicle.objects.filter(vehicle_number=vehicle_number)
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            
+            if queryset.exists():
+                self.add_error('vehicle_number', 
+                    f'Vehicle with number {vehicle_number} already exists.')
+            
+            # Business-level uniqueness check (only if we have business)
+            if business:
+                business_queryset = Vehicle.objects.filter(
+                    business=business, 
+                    vehicle_number=vehicle_number
+                )
+                if self.instance and self.instance.pk:
+                    business_queryset = business_queryset.exclude(pk=self.instance.pk)
+                
+                if business_queryset.exists():
+                    self.add_error('vehicle_number',
+                        f'Vehicle number {vehicle_number} is already registered in your business.')
+        
+        # Validate owner-business consistency (only if we have both)
+        if owner and business:
+            if owner.business != business:
+                self.add_error('owner',
+                    f'Selected owner belongs to {owner.business.business_name}, but vehicle is for {business.business_name}.')
+        
+        return cleaned_data
     
 
 
@@ -867,15 +969,28 @@ class VehicleAdmin(ExportMixin, BusinessAwareAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related('owner', 'business')
+    
+    def get_form(self, request, obj=None, **kwargs):
+        kwargs['form'] = VehicleForm
+        form = super().get_form(request, obj, **kwargs)
+        form.request = request  # Pass request to form
+        return form
+    
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        # Further restrict owner choices to user's business
+        if db_field.name == "owner":
+            if hasattr(request.user, 'business') and request.user.business:
+                kwargs["queryset"] = VehicleOwner.objects.filter(business=request.user.business)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
         
             
 
 
-# admin.py - PartyAdmin
 class PartyForm(forms.ModelForm):
     class Meta:
         model = Party
         fields = '__all__'
+    
     
     def clean(self):
         cleaned_data = super().clean()
@@ -886,7 +1001,7 @@ class PartyForm(forms.ModelForm):
         business = cleaned_data.get('business')
         
         # If business not in form data, get from request
-        if not business and hasattr(self, 'request') and self.request.user.business:
+        if not business and self.request and hasattr(self.request.user, 'business') and self.request.user.business:
             business = self.request.user.business
             cleaned_data['business'] = business
         
@@ -911,9 +1026,7 @@ class PartyForm(forms.ModelForm):
         
         # Validate mobile conflicts
         if mobile and business:
-            # Check if mobile exists as primary in same business
             primary_queryset = Party.objects.filter(business=business, mobile=mobile)
-            # Check if mobile exists as alternate in same business
             alternate_queryset = Party.objects.filter(business=business, alternate_mobile=mobile)
             
             if self.instance and self.instance.pk:
@@ -943,8 +1056,101 @@ class PartyForm(forms.ModelForm):
                 self.add_error('alternate_mobile',
                     f'This mobile is already registered as alternate mobile for another party.')
         
+        # Validate mobile and alternate_mobile are not same
+        if mobile and alternate_mobile and mobile == alternate_mobile:
+            self.add_error('alternate_mobile',
+                'Alternate mobile cannot be same as primary mobile.')
+        
         return cleaned_data
     
+
+
+
+# from django.db import IntegrityError
+#  # admin.py - PartyForm with database error handling
+# # admin.py - PartyForm with proper validation stopping
+# class PartyForm(forms.ModelForm):
+#     class Meta:
+#         model = Party
+#         fields = '__all__'
+    
+#     def __init__(self, *args, **kwargs):
+#         self.request = kwargs.pop('request', None)
+#         super().__init__(*args, **kwargs)
+    
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         name = cleaned_data.get('name')
+#         gst_no = cleaned_data.get('gst_no')
+#         mobile = cleaned_data.get('mobile')
+#         alternate_mobile = cleaned_data.get('alternate_mobile')
+#         business = cleaned_data.get('business')
+        
+#         # If business not in form data, get from request
+#         if not business and self.request and hasattr(self.request.user, 'business') and self.request.user.business:
+#             business = self.request.user.business
+#             cleaned_data['business'] = business
+        
+#         # Validate name uniqueness
+#         if name and business:
+#             queryset = Party.objects.filter(business=business, name=name)
+#             if self.instance and self.instance.pk:
+#                 queryset = queryset.exclude(pk=self.instance.pk)
+#             if queryset.exists():
+#                 self.add_error('name', 
+#                     f'Party with name "{name}" already exists in your business.')
+        
+#         # Validate GST uniqueness
+#         if gst_no:
+#             gst_no = gst_no.strip().upper()
+#             queryset = Party.objects.filter(gst_no=gst_no)
+#             if self.instance and self.instance.pk:
+#                 queryset = queryset.exclude(pk=self.instance.pk)
+#             if queryset.exists():
+#                 self.add_error('gst_no',
+#                     f'GST number {gst_no} is already registered with another party.')
+        
+#         # Validate mobile conflicts
+#         if mobile and business:
+#             primary_queryset = Party.objects.filter(business=business, mobile=mobile)
+#             alternate_queryset = Party.objects.filter(business=business, alternate_mobile=mobile)
+            
+#             if self.instance and self.instance.pk:
+#                 primary_queryset = primary_queryset.exclude(pk=self.instance.pk)
+#                 alternate_queryset = alternate_queryset.exclude(pk=self.instance.pk)
+            
+#             if primary_queryset.exists():
+#                 self.add_error('mobile',
+#                     f'Mobile {mobile} is already registered as primary mobile for another party.')
+#             elif alternate_queryset.exists():
+#                 self.add_error('mobile',
+#                     f'Mobile {mobile} is already registered as alternate mobile for another party.')
+        
+#         # Validate alternate mobile conflicts
+#         if alternate_mobile and business:
+#             primary_queryset = Party.objects.filter(business=business, mobile=alternate_mobile)
+#             alternate_queryset = Party.objects.filter(business=business, alternate_mobile=alternate_mobile)
+            
+#             if self.instance and self.instance.pk:
+#                 primary_queryset = primary_queryset.exclude(pk=self.instance.pk)
+#                 alternate_queryset = alternate_queryset.exclude(pk=self.instance.pk)
+            
+#             if primary_queryset.exists():
+#                 self.add_error('alternate_mobile',
+#                     f'This mobile is already registered as primary mobile for another party.')
+#             elif alternate_queryset.exists():
+#                 self.add_error('alternate_mobile',
+#                     f'This mobile is already registered as alternate mobile for another party.')
+        
+#         # Validate mobile and alternate_mobile are not same
+#         if mobile and alternate_mobile and mobile == alternate_mobile:
+#             self.add_error('alternate_mobile',
+#                 'Alternate mobile cannot be same as primary mobile.')
+        
+#         return cleaned_data
+    
+
+
 
 
 @admin.register(Party)
@@ -1051,6 +1257,9 @@ class PartyAdmin(ExportMixin, BusinessAwareAdmin):
         return form
     
 
+
+    
+
 class DriverForm(forms.ModelForm):
     class Meta:
         model = Driver
@@ -1092,7 +1301,7 @@ class DriverAdmin(ExportMixin, BusinessAwareAdmin):
         'total_bills_badge',
         'created_at'
     )
-    list_filter = ('created_at', 'updated_at')
+    # list_filter = ('created_at', 'updated_at')
     search_fields = ('driver_name', 'mobile', 'alternate_mobile', 'business__business_name')
     readonly_fields = ('photo_preview', 'total_bills_badge', 'created_at', 'updated_at')
     list_select_related = ('business',)
@@ -1193,6 +1402,65 @@ class DriverAdmin(ExportMixin, BusinessAwareAdmin):
 
 
 
+
+
+
+class BillForm(forms.ModelForm):
+    class Meta:
+        model = Bill
+        fields = '__all__'
+
+    _print = forms.BooleanField(
+        required=False,
+        initial=True,
+        label='🖨️ Print after save',
+        help_text='Open print preview after saving'
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        pending_amount = cleaned_data.get('pending_amount')
+        rent_amount = cleaned_data.get('rent_amount')
+        advance_amount = cleaned_data.get('advance_amount')
+        commission = cleaned_data.get('commission')
+        commission_charge = cleaned_data.get('commission_charge')
+        commission_pending = cleaned_data.get('commission_pending')
+        commission_received = cleaned_data.get('commission_received')
+        commission_received_date = cleaned_data.get('commission_received_date')
+        business_id = cleaned_data.get('business_id')
+        vehicle_id = cleaned_data.get('vehicle_id')
+
+          
+        # Validate amounts
+
+        if advance_amount >rent_amount:
+            raise ValidationError({'advance_amount': 'Advance amount cannot exceed rent amount.'})
+        
+        if commission_received > commission_charge:
+            raise ValidationError({'commission_received': 'Commission received cannot exceed commission charge.'})
+         
+
+        # Validate commission received date
+        if commission_received_date and not commission_received:
+            raise ValidationError({
+                'commission_received_date': 'Commission received date cannot be set without commission received amount.'
+            })
+        
+        # Add any business-specific validations using business_id
+        if vehicle_id and business_id:
+            # Example: Validate vehicle belongs to the same business
+            from .models import Vehicle
+            try:
+                vehicle = Vehicle.objects.get(pk=vehicle_id)
+                if vehicle.business_id != business_id:
+                    raise ValidationError({
+                        'vehicle': 'Selected vehicle does not belong to your business.'
+                    })
+            except Vehicle.DoesNotExist:
+                pass
+
+        return cleaned_data
+    
 
 
 @admin.register(Bill)
@@ -1326,6 +1594,7 @@ class BillAdmin(ExportMixin, BusinessAwareAdmin):
         'commission_status_badge',
         'payment_status_badge',
         'bill_date_formatted',
+        'print_button',
     )
     
     list_filter = (
@@ -1419,6 +1688,49 @@ class BillAdmin(ExportMixin, BusinessAwareAdmin):
     ordering = ('-bill_date',)
     
     actions = ['mark_as_paid', 'mark_commission_received']
+    
+    def print_button(self, obj):
+        """Print button for individual bill"""
+        from django.urls import reverse
+        print_url = reverse('bill_print', args=[obj.id])
+        
+        return format_html(
+            '''
+            <a href="{}" 
+            class="print-btn" 
+            target="_blank"
+            title="Print Bill #{}"
+            onclick="event.stopPropagation();">
+                🖨️ Print
+            </a>
+            ''',
+            print_url, obj.bill_number
+        )
+    print_button.short_description = 'Print'
+
+    def response_add(self, request, obj, post_url_continue=None):
+        """Auto-print after creating a new bill"""
+        response = super().response_add(request, obj, post_url_continue)
+        
+        # Check if user wants auto-print
+        if '_print' in request.POST:
+            # Redirect back to changelist with print parameter
+            from django.urls import reverse
+            changelist_url = reverse('admin:AdminApp_bill_changelist')
+            return HttpResponseRedirect(f"{changelist_url}?_print={obj.id}")
+        
+        return response
+
+    def response_change(self, request, obj):
+        """Auto-print after updating a bill"""
+        response = super().response_change(request, obj)
+        
+        if '_print' in request.POST:
+            from django.urls import reverse
+            changelist_url = reverse('admin:AdminApp_bill_changelist')
+            return HttpResponseRedirect(f"{changelist_url}?_print={obj.id}")
+        
+        return response
     
     # Override changelist to add custom export buttons
     def changelist_view(self, request, extra_context=None):
@@ -1618,4 +1930,11 @@ class BillAdmin(ExportMixin, BusinessAwareAdmin):
             list_filter = [f for f in list_filter if f != 'business']
         return list_filter
     
+    def get_form(self, request, obj=None, **kwargs):
+        kwargs['form'] = BillForm
+        form = super().get_form(request, obj, **kwargs)
+        form.request = request  # Pass request to form
+        return form
+
+  
 

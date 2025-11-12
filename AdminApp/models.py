@@ -296,27 +296,120 @@ class Vehicle(models.Model, RoleBasedAccessMixin):
     owner_info.fget.short_description = 'Owner Information'
 
     def clean(self):
-        # Validate and format vehicle number
-        if self.vehicle_number:
-            self.vehicle_number = validate_vehicle_number(self.vehicle_number)
+        """Comprehensive validation for Vehicle model"""
+        super().clean()
         
-        # You can also add unique validation per business if needed
+        # Validate and format vehicle number
+        self._validate_vehicle_number()
+        
+        # Validate vehicle number uniqueness
+        self._validate_vehicle_number_unique()
+        
+        # Validate owner-business consistency
+        self._validate_owner_business_consistency()
+    
+    def _validate_vehicle_number(self):
+        """Validate and format vehicle number"""
+        if self.vehicle_number:
+            # Format vehicle number
+            self.vehicle_number = validate_vehicle_number(self.vehicle_number)
+            
+            # Additional validation for Indian vehicle numbers
+            if len(self.vehicle_number) < 8:
+                raise ValidationError({
+                    'vehicle_number': 'Vehicle number seems too short. Minimum 8 characters required.'
+                })
+            
+            # Check format: Should contain both letters and numbers
+            if not any(char.isdigit() for char in self.vehicle_number):
+                raise ValidationError({
+                    'vehicle_number': 'Vehicle number should contain at least one number.'
+                })
+            
+            if not any(char.isalpha() for char in self.vehicle_number):
+                raise ValidationError({
+                    'vehicle_number': 'Vehicle number should contain at least one letter.'
+                })
+    
+    def _validate_vehicle_number_unique(self):
+        """Validate vehicle number is globally unique"""
+        if self.vehicle_number:
+            queryset = Vehicle.objects.filter(vehicle_number=self.vehicle_number)
+            if self.pk:
+                queryset = queryset.exclude(pk=self.pk)
+            
+            if queryset.exists():
+                raise ValidationError({
+                    'vehicle_number': f'Vehicle with number {self.vehicle_number} already exists.'
+                })
+    
+    def _validate_owner_business_consistency(self):
+        """Validate owner belongs to the same business as vehicle"""
+        if self.owner and self.business_id:
+            if self.owner.business != self.business:
+                raise ValidationError({
+                    'owner': f'Selected owner belongs to different business ({self.owner.business.business_name}).'
+                })
+        
+        # If no owner selected, ensure it's intentional
+        if not self.owner and self.pk:
+            # For existing vehicles without owner, show warning but allow
+            pass
+    
+    def _validate_business_vehicle_number_unique(self):
+        """Validate vehicle number is unique within business (additional safety)"""
         if self.vehicle_number and self.business_id:
             queryset = Vehicle.objects.filter(
-                business_id=self.business_id, 
+                business_id=self.business_id,
                 vehicle_number=self.vehicle_number
             )
             if self.pk:
                 queryset = queryset.exclude(pk=self.pk)
+            
             if queryset.exists():
                 raise ValidationError({
-                    'vehicle_number': 'This vehicle number is already registered in this business.'
+                    'vehicle_number': f'Vehicle number {self.vehicle_number} is already registered in your business.'
                 })
 
     def save(self, *args, **kwargs):
+        """Ensure business is set and validations pass"""
+        # Set business from user if not set (for new objects)
+        if not self.pk and not self.business_id:
+            try:
+                from crum import get_current_user
+                current_user = get_current_user()
+                if current_user and hasattr(current_user, 'business') and current_user.business:
+                    self.business = current_user.business
+            except Exception:
+                pass  # Business will be set by admin save_model
+        
+        # Convert empty strings to None for optional fields
+        self.vehicle_name = self.vehicle_name or None
+        self.model_name = self.model_name or None
+        self.notes = self.notes or None
+        
+        # Ensure vehicle number is properly formatted
+        if self.vehicle_number:
+            self.vehicle_number = self.vehicle_number.upper().replace(' ', '')
+        
+        # Run full validation
         self.clean()
+        
         super().save(*args, **kwargs)
 
+
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['vehicle_number'],
+                name='unique_vehicle_number'
+            ),
+            models.UniqueConstraint(
+                fields=['business', 'vehicle_number'],
+                name='unique_vehicle_number_business'
+            ),
+        ]
 
 class Party(models.Model):
     business = models.ForeignKey(Business, on_delete=models.CASCADE) 
@@ -360,106 +453,107 @@ class Party(models.Model):
     
     total_bills.fget.short_description = 'Total Bills'
 
- 
+    # def clean(self):
+    #     """Comprehensive validation for Party model"""
+    #     super().clean()
+        
+    #     # Handle name validation
+    #     if self.name and self.business_id:
+    #         # Validate name doesn't exist in same business
+    #         self._validate_name_unique('name', self.name)
+        
+    #     # Handle GST validation
+    #     if self.gst_no:
+    #         # Validate GST doesn't exist globally
+    #         self._validate_gst_unique('gst_no', self.gst_no)
+        
+    #     # Handle mobile validation
+    #     if self.mobile:
+    #         # Validate mobile doesn't exist in same business
+    #         self._validate_mobile_unique('mobile', self.mobile)
+            
+    #         # Validate mobile and alternate_mobile are not same
+    #         if self.mobile == self.alternate_mobile:
+    #             raise ValidationError({
+    #                 'alternate_mobile': 'Alternate mobile cannot be same as primary mobile.'
+    #             })
+        
+    #     # Handle alternate mobile validation  
+    #     if self.alternate_mobile:
+    #         # Validate alternate mobile doesn't exist in same business
+    #         self._validate_mobile_unique('alternate_mobile', self.alternate_mobile)
 
-    def clean(self):
-        """Comprehensive validation for Party model"""
-        super().clean()
-        
-        # Validate name uniqueness per business
-        self._validate_name_unique()
-        
-        # Validate GST number uniqueness (global)
-        self._validate_gst_unique()
-        
-        # Validate mobile numbers
-        self._validate_mobile_numbers()
-    
-    def _validate_name_unique(self):
-        """Validate party name is unique within business"""
-        if self.name and self.business_id:
-            queryset = Party.objects.filter(
-                business_id=self.business_id,
-                name=self.name
-            )
-            if self.pk:
-                queryset = queryset.exclude(pk=self.pk)
+    # def _validate_name_unique(self, field_name, name_value):
+    #     """Helper method to validate name uniqueness"""
+    #     if not name_value or not self.business_id:
+    #         return
             
-            if queryset.exists():
-                raise ValidationError({
-                    'name': f'Party with name "{self.name}" already exists in your business.'
-                })
-    
-    def _validate_gst_unique(self):
-        """Validate GST number is globally unique"""
-        if self.gst_no:
-            # Remove spaces and convert to uppercase
-            self.gst_no = self.gst_no.strip().upper()
+    #     # Check against names in same business
+    #     name_queryset = Party.objects.filter(
+    #         business_id=self.business_id,
+    #         name=name_value
+    #     )
+        
+    #     if self.pk:
+    #         name_queryset = name_queryset.exclude(pk=self.pk)
+        
+    #     if name_queryset.exists():
+    #         raise ValidationError({
+    #             field_name: f'Party name "{name_value}" is already registered in your business.'
+    #         })
+
+    # def _validate_gst_unique(self, field_name, gst_value):
+    #     """Helper method to validate GST uniqueness"""
+    #     if not gst_value:
+    #         return
             
-            queryset = Party.objects.filter(gst_no=self.gst_no)
-            if self.pk:
-                queryset = queryset.exclude(pk=self.pk)
+    #     # Clean GST format
+    #     gst_value = gst_value.strip().upper()
+        
+    #     # Check against GST numbers globally
+    #     gst_queryset = Party.objects.filter(gst_no=gst_value)
+        
+    #     if self.pk:
+    #         gst_queryset = gst_queryset.exclude(pk=self.pk)
+        
+    #     if gst_queryset.exists():
+    #         raise ValidationError({
+    #             field_name: f'GST number {gst_value} is already registered with another party.'
+    #         })
+
+    # def _validate_mobile_unique(self, field_name, mobile_value):
+    #     """Helper method to validate mobile uniqueness"""
+    #     if not mobile_value or not self.business_id:
+    #         return
             
-            if queryset.exists():
-                raise ValidationError({
-                    'gst_no': f'GST number {self.gst_no} is already registered with another party.'
-                })
-    
-    def _validate_mobile_numbers(self):
-        """Validate mobile and alternate mobile"""
-        if self.mobile:
-            # Validate mobile format
-            validate_mobile_number(self.mobile)
-            
-            # Validate mobile doesn't conflict within business
-            self._validate_mobile_conflict('mobile', self.mobile)
+    #     # Check against primary mobile numbers
+    #     mobile_queryset = Party.objects.filter(
+    #         business_id=self.business_id,
+    #         mobile=mobile_value
+    #     )
         
-        if self.alternate_mobile:
-            # Validate alternate mobile format
-            validate_mobile_number(self.alternate_mobile)
-            
-            # Validate alternate mobile doesn't conflict
-            self._validate_mobile_conflict('alternate_mobile', self.alternate_mobile)
+    #     # Check against alternate mobile numbers  
+    #     alternate_queryset = Party.objects.filter(
+    #         business_id=self.business_id,
+    #         alternate_mobile=mobile_value
+    #     )
         
-        # Validate mobile and alternate_mobile are not same
-        if self.mobile and self.alternate_mobile and self.mobile == self.alternate_mobile:
-            raise ValidationError({
-                'alternate_mobile': 'Alternate mobile cannot be same as primary mobile.'
-            })
-    
-    def _validate_mobile_conflict(self, field_name, mobile_value):
-        """Validate mobile doesn't conflict with any mobile in same business"""
-        if not mobile_value or not self.business_id:
-            return
+    #     if self.pk:
+    #         mobile_queryset = mobile_queryset.exclude(pk=self.pk)
+    #         alternate_queryset = alternate_queryset.exclude(pk=self.pk)
         
-        # Check against primary mobile numbers
-        primary_queryset = Party.objects.filter(
-            business_id=self.business_id,
-            mobile=mobile_value
-        )
+    #     if mobile_queryset.exists():
+    #         raise ValidationError({
+    #             field_name: f'Mobile number {mobile_value} is already registered as primary mobile for another party.'
+    #         })
         
-        # Check against alternate mobile numbers  
-        alternate_queryset = Party.objects.filter(
-            business_id=self.business_id,
-            alternate_mobile=mobile_value
-        )
-        
-        if self.pk:
-            primary_queryset = primary_queryset.exclude(pk=self.pk)
-            alternate_queryset = alternate_queryset.exclude(pk=self.pk)
-        
-        if primary_queryset.exists():
-            raise ValidationError({
-                field_name: f'Mobile number {mobile_value} is already registered as primary mobile for another party.'
-            })
-        
-        if alternate_queryset.exists():
-            raise ValidationError({
-                field_name: f'Mobile number {mobile_value} is already registered as alternate mobile for another party.'
-            })
+    #     if alternate_queryset.exists():
+    #         raise ValidationError({
+    #             field_name: f'Mobile number {mobile_value} is already registered as alternate mobile for another party.'
+    #         })
 
     def save(self, *args, **kwargs):
-        """Ensure business is set and validations pass"""
+        """Ensure business is set and format fields"""
         # Set business from user if not set (for new objects)
         if not self.pk and not self.business_id:
             try:
@@ -468,9 +562,9 @@ class Party(models.Model):
                 if current_user and hasattr(current_user, 'business') and current_user.business:
                     self.business = current_user.business
             except Exception:
-                pass  # Business will be set by admin save_model
+                pass
         
-        # Convert empty strings to None for optional fields
+        # Convert empty strings to None for mobile fields
         self.mobile = self.mobile or None
         self.alternate_mobile = self.alternate_mobile or None
         self.gst_no = self.gst_no or None
@@ -479,11 +573,9 @@ class Party(models.Model):
         if self.gst_no:
             self.gst_no = self.gst_no.strip().upper()
         
-        # Run full validation
-        self.clean()
-        
+        # DON'T call self.clean() here
         super().save(*args, **kwargs)
-
+        
         
     class Meta:
         verbose_name_plural = "Parties"
@@ -509,7 +601,6 @@ class Party(models.Model):
                 condition=models.Q(alternate_mobile__isnull=False)
             ),
         ]
-
 
 
 class Driver(models.Model):
@@ -743,8 +834,8 @@ class Bill(models.Model):
     from_location = models.CharField(max_length=255, verbose_name="From Location")
     to_location = models.CharField(max_length=255, verbose_name="To Location")
     material_type = models.CharField(max_length=255, null=True, blank=True, verbose_name="Type of Material")
-    rent_amount = models.DecimalField(max_digits=10, decimal_places=0, verbose_name="Rent Amount")
-    advance_amount = models.DecimalField(max_digits=10, decimal_places=0, verbose_name="Advance Amount")
+    rent_amount = models.DecimalField(max_digits=10, decimal_places=0,default=0, verbose_name="Rent Amount")
+    advance_amount = models.DecimalField(max_digits=10, decimal_places=0,default=0, verbose_name="Advance Amount")
     pending_amount = models.DecimalField(max_digits=10, decimal_places=0, default=0, verbose_name="Pending Amount")
     commission = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True, default=0, verbose_name="Commission %")
     commission_charge = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True, default=0, verbose_name="Commission Amount")
@@ -837,35 +928,7 @@ class Bill(models.Model):
         # Auto-calculate commission pending
         if self.commission_charge:
             self.commission_pending = self.commission_charge - (self.commission_received or 0)
-
-        # Validate amounts
-        if self.advance_amount > self.rent_amount:
-            raise ValidationError({'advance_amount': 'Advance amount cannot exceed rent amount.'})
-        
-        if self.commission_received > self.commission_charge:
-            raise ValidationError({'commission_received': 'Commission received cannot exceed commission charge.'})
-        
-        if self.pending_amount < 0:
-            raise ValidationError("Pending amount cannot be negative.")
-
-        # Validate commission received date
-        if self.commission_received_date and not self.commission_received:
-            raise ValidationError({
-                'commission_received_date': 'Commission received date cannot be set without commission received amount.'
-            })
-        
-        # Add any business-specific validations using business_id
-        if self.vehicle_id and self.business_id:
-            # Example: Validate vehicle belongs to the same business
-            from .models import Vehicle
-            try:
-                vehicle = Vehicle.objects.get(pk=self.vehicle_id)
-                if vehicle.business_id != self.business_id:
-                    raise ValidationError({
-                        'vehicle': 'Selected vehicle does not belong to your business.'
-                    })
-            except Vehicle.DoesNotExist:
-                pass
+ 
 
     def save(self, *args, **kwargs):
         # Auto-generate bill number if not set

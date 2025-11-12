@@ -103,17 +103,17 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# settings.py
-JAZZMIN_SETTINGS = {
-    # title of the window
-    "site_title": "Transport Management System",
-    
-    # Title on the brand, and the login screen (19 chars max)
-    "site_header": "TMS Admin",
+JAZZMIN_SETTINGS = { 
+ 
+    "site_title": "🚛 Transport Management System",
+    "site_header": "🚛 Transport Management System",
+    "site_brand": "🚛 Transport Management System",
+    "welcome_sign": "Welcome to 🚛 Transport Management System Dashboard",
+    "copyright": "© 2025 🚛 Ultoxy Technologies ",
     
     # Square logo to use for your site, must be present in static files, used for brand on top left
-    "site_logo": None,
+    "site_logo": "website/img/logo.png",  # path inside STATIC files
+    "login_logo": "website/img/logo-for-admin-login.png",
     
     # Welcome text on the login screen
     "welcome_sign": "Welcome to Transport Management System",
@@ -133,18 +133,18 @@ JAZZMIN_SETTINGS = {
     # Show the UI customizer on the sidebar
     "show_ui_builder": True,
     
-    # Change icons for different models
+    # Change icons for different models - FIXED APP NAME
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
         "auth.Group": "fas fa-users",
-        "transport.CustomUser": "fas fa-user-tie",
-        "transport.Business": "fas fa-building",
-        "transport.VehicleOwner": "fas fa-user-tag",
-        "transport.Vehicle": "fas fa-truck",
-        "transport.Party": "fas fa-handshake",
-        "transport.Driver": "fas fa-id-card",
-        "transport.Bill": "fas fa-file-invoice-dollar",
+        "adminapp.customuser": "fas fa-user-tie",
+        "adminapp.business": "fas fa-building",
+        "adminapp.vehicleowner": "fas fa-user-tag",
+        "adminapp.vehicle": "fas fa-truck", 
+        "adminapp.party": "fas fa-handshake",
+        "adminapp.driver": "fas fa-id-card",
+        "adminapp.bill": "fas fa-file-invoice-dollar",
     },
     
     # Icons that are used when one is not manually specified
@@ -153,46 +153,16 @@ JAZZMIN_SETTINGS = {
     
     # Custom links to append to app groups, keyed on app name
     "custom_links": {
-        "transport": [{
-            "name": "Make Messages", 
+        "AdminApp": [{
+            "name": "Reports", 
             "url": "make_messages", 
-            "icon": "fas fa-comments",
-            "permissions": ["transport.view_customuser"]
+            "icon": "fas fa-chart-bar",
+            "permissions": ["AdminApp.view_customuser"]
         }]
     },
 }
 
-JAZZMIN_UI_TWEAKS = {
-    "navbar_small_text": False,
-    "footer_small_text": False,
-    "body_small_text": False,
-    "brand_small_text": False,
-    "brand_colour": "navbar-indigo",
-    "accent": "accent-olive",
-    "navbar": "navbar-indigo navbar-dark",
-    "no_navbar_border": False,
-    "navbar_fixed": True,
-    "layout_boxed": False,
-    "footer_fixed": False,
-    "sidebar_fixed": True,
-    "sidebar": "sidebar-dark-indigo",
-    "sidebar_nav_small_text": False,
-    "sidebar_disable_expand": False,
-    "sidebar_nav_child_indent": False,
-    "sidebar_nav_compact_style": False,
-    "sidebar_nav_legacy_style": False,
-    "sidebar_nav_flat_style": False,
-    "theme": "default",
-    "dark_mode_theme": None,
-    "button_classes": {
-        "primary": "btn-outline-primary",
-        "secondary": "btn-outline-secondary",
-        "info": "btn-info",
-        "warning": "btn-warning",
-        "danger": "btn-danger",
-        "success": "btn-success"
-    }
-}
+
 
 
 
@@ -203,11 +173,10 @@ AUTH_USER_MODEL = 'AdminApp.CustomUser'
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
-
+TIME_ZONE = 'Asia/Kolkata'
+USE_TZ = True
 USE_I18N = True
 
-USE_TZ = True
 
 
 import os
