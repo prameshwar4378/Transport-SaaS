@@ -2,6 +2,9 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import PermissionDenied
 from .models import Bill
+def index(request):
+    return render(request, 'index.html')
+
 
 @staff_member_required
 def bill_print_view(request, bill_id):

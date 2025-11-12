@@ -107,19 +107,18 @@ JAZZMIN_SETTINGS = {
  
     "site_title": "🚛 Transport Management System",
     "site_header": "🚛 Transport Management System",
-    "site_brand": "🚛 Transport Management System",
+    "site_brand": "🚛 TMS",
     "welcome_sign": "Welcome to 🚛 Transport Management System Dashboard",
-    "copyright": "© 2025 🚛 Ultoxy Technologies ",
+    "copyright": "© 2025 Ultoxy Technologies ",
     
     # Square logo to use for your site, must be present in static files, used for brand on top left
-    "site_logo": "website/img/logo.png",  # path inside STATIC files
-    "login_logo": "website/img/logo-for-admin-login.png",
+    "site_logo": "img/logo.png",  # path inside STATIC files
+    "login_logo": "img/logo-for-admin-login.png",
     
     # Welcome text on the login screen
     "welcome_sign": "Welcome to Transport Management System",
     
     # Copyright on the footer
-    "copyright": "Transport Management System",
     
     # Field name on user model that contains avatar image
     "user_avatar": "profile_picture",
@@ -188,8 +187,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 

@@ -21,7 +21,8 @@ from django.conf.urls.static import static
 from AdminApp import views
  
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls, name=''),
+    path('', views.index, name='admin_index'),
     path('bill/<int:bill_id>/print/', views.bill_print_view, name='bill_print'),
     path('bill/print/', views.bills_print_view, name='bills_print'),
 ]+static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT) 

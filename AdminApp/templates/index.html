@@ -1,0 +1,2585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransFlow Pro | Transport Business Management</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --secondary: #f59e0b;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+ 
+
+        /* Custom Bootstrap Navigation */
+        .navbar-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1rem 0;
+            z-index: 1030;
+            transition: all 0.4s ease;
+            background: rgba(255, 255, 255, 0.1) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-custom.scrolled {
+            padding: 0.6rem 0;
+            background: rgba(255, 255, 255, 0.98) !important;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .navbar-brand-custom {
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-custom.scrolled .navbar-brand-custom {
+            color: var(--primary);
+        }
+
+        .navbar-brand-custom i {
+            margin-right: 0.5rem;
+            font-size: 1.8rem;
+        }
+
+        .navbar-brand-custom:hover {
+            transform: translateY(-1px);
+        }
+
+        .nav-link-custom {
+            color: white !important;
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            margin: 0 0.2rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .navbar-custom.scrolled .nav-link-custom {
+            color: var(--dark) !important;
+        }
+
+        .nav-link-custom:hover {
+            color: var(--secondary) !important;
+            background: rgba(37, 99, 235, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .nav-link-custom::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--secondary);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .nav-link-custom:hover::after {
+            width: 80%;
+        }
+
+        .nav-cta-custom {
+            background: var(--secondary) !important;
+            color: white !important;
+            padding: 0.6rem 1.5rem !important;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            margin-left: 0.5rem;
+            border: none;
+        }
+
+        .nav-cta-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+            background: #e58e0b !important;
+            color: white !important;
+        }
+
+        /* Bootstrap Navbar Toggler Customization */
+        .navbar-toggler {
+            border: none;
+            padding: 0.25rem 0.5rem;
+            background: transparent;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: none;
+        }
+
+        .navbar-toggler-icon-custom {
+            width: 24px;
+            height: 2px;
+            background: white;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-toggler-icon-custom::before,
+        .navbar-toggler-icon-custom::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 2px;
+            background: white;
+            left: 0;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-toggler-icon-custom::before {
+            top: -6px;
+        }
+
+        .navbar-toggler-icon-custom::after {
+            top: 6px;
+        }
+
+        .navbar-custom.scrolled .navbar-toggler-icon-custom,
+        .navbar-custom.scrolled .navbar-toggler-icon-custom::before,
+        .navbar-custom.scrolled .navbar-toggler-icon-custom::after {
+            background: var(--dark);
+        }
+
+        .navbar-toggler[aria-expanded="true"] .navbar-toggler-icon-custom {
+            background: transparent;
+        }
+
+        .navbar-toggler[aria-expanded="true"] .navbar-toggler-icon-custom::before {
+            transform: rotate(45deg);
+            top: 0;
+        }
+
+        .navbar-toggler[aria-expanded="true"] .navbar-toggler-icon-custom::after {
+            transform: rotate(-45deg);
+            top: 0;
+        }
+
+        /* Mobile Menu Background */
+        @media (max-width: 991.98px) {
+            .navbar-collapse {
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(20px);
+                border-radius: 12px;
+                margin-top: 1rem;
+                padding: 1.5rem;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                border: 1px solid rgba(0, 0, 0, 0.05);
+            }
+
+            .nav-link-custom {
+                color: var(--dark) !important;
+                margin: 0.3rem 0;
+                text-align: center;
+                padding: 0.8rem 1rem !important;
+            }
+
+            .nav-link-custom:hover {
+                background: rgba(37, 99, 235, 0.1);
+            }
+
+            .nav-cta-custom {
+                margin: 0.5rem 0 0 0;
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding-top: 80px;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            color: white;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.2s forwards;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 2.5rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.4s forwards;
+        }
+
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.6s forwards;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 160px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--secondary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        /* Animated Background Elements */
+        .floating-shapes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+            border-radius: 50%;
+            background: white;
+            animation: float 15s infinite linear;
+        }
+
+        .shape-1 {
+            width: 200px;
+            height: 200px;
+            top: 10%;
+            left: 5%;
+            animation-delay: 0s;
+        }
+
+        .shape-2 {
+            width: 120px;
+            height: 120px;
+            top: 70%;
+            left: 80%;
+            animation-delay: 3s;
+            animation-duration: 12s;
+        }
+
+        .shape-3 {
+            width: 150px;
+            height: 150px;
+            top: 20%;
+            left: 85%;
+            animation-delay: 6s;
+            animation-duration: 18s;
+        }
+
+        .shape-4 {
+            width: 80px;
+            height: 80px;
+            top: 80%;
+            left: 10%;
+            animation-delay: 9s;
+            animation-duration: 10s;
+        }
+
+        /* Animated Icons */
+        .feature-icons {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 3rem;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.8s forwards;
+            flex-wrap: wrap;
+        }
+
+        .icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            min-width: 100px;
+        }
+
+        .icon-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.8rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .icon-circle:hover {
+            transform: translateY(-5px) scale(1.1);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .icon-circle i {
+            font-size: 1.7rem;
+            color: var(--secondary);
+        }
+
+        .icon-text {
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+            }
+            100% {
+                transform: translateY(0) rotate(360deg);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero {
+                padding-top: 70px;
+            }
+            
+            .hero-content {
+                padding: 1.5rem 1rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 280px;
+            }
+
+            .feature-icons {
+                gap: 1rem;
+            }
+
+            .icon-item {
+                min-width: 80px;
+            }
+
+            .icon-circle {
+                width: 60px;
+                height: 60px;
+            }
+
+            .icon-circle i {
+                font-size: 1.4rem;
+            }
+
+            .shape-1, .shape-2, .shape-3, .shape-4 {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar-brand-custom {
+                font-size: 1.4rem;
+            }
+
+            .hero-title {
+                margin-bottom: 1rem;
+            }
+
+            .hero-subtitle {
+                margin-bottom: 2rem;
+            }
+
+            .feature-icons {
+                gap: 0.8rem;
+            }
+
+            .icon-item {
+                min-width: 70px;
+            }
+
+            .icon-circle {
+                width: 50px;
+                height: 50px;
+            }
+
+            .icon-circle i {
+                font-size: 1.2rem;
+            }
+
+            .icon-text {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<style>
+    /* Body Background with Moving Blurry Shapes */
+body {
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    color: var(--dark);
+            background: #033670;
+    /* background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%); */
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Animated Background Shapes */
+.body-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.body-shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+    animation: body-float 25s infinite linear;
+}
+
+.body-shape-1 {
+    width: 400px;
+    height: 400px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    top: 10%;
+    left: 5%;
+    animation-delay: 0s;
+    animation-duration: 30s;
+}
+
+.body-shape-2 {
+    width: 300px;
+    height: 300px;
+    background: linear-gradient(45deg, #f59e0b, #f97316);
+    top: 60%;
+    left: 80%;
+    animation-delay: 5s;
+    animation-duration: 25s;
+}
+
+.body-shape-3 {
+    width: 350px;
+    height: 350px;
+    background: linear-gradient(45deg, #3b82f6, #06b6d4);
+    top: 20%;
+    left: 85%;
+    animation-delay: 10s;
+    animation-duration: 35s;
+}
+
+.body-shape-4 {
+    width: 250px;
+    height: 250px;
+    background: linear-gradient(45deg, #10b981, #059669);
+    top: 80%;
+    left: 10%;
+    animation-delay: 15s;
+    animation-duration: 20s;
+}
+
+.body-shape-5 {
+    width: 320px;
+    height: 320px;
+    background: linear-gradient(45deg, #8b5cf6, #a855f7);
+    top: 40%;
+    left: 70%;
+    animation-delay: 7s;
+    animation-duration: 28s;
+}
+
+.body-shape-6 {
+    width: 280px;
+    height: 280px;
+    background: linear-gradient(45deg, #ef4444, #f97316);
+    top: 15%;
+    left: 60%;
+    animation-delay: 12s;
+    animation-duration: 32s;
+}
+
+.body-shape-7 {
+    width: 380px;
+    height: 380px;
+    background: linear-gradient(45deg, #ec4899, #d946ef);
+    top: 70%;
+    left: 20%;
+    animation-delay: 8s;
+    animation-duration: 26s;
+}
+
+.body-shape-8 {
+    width: 220px;
+    height: 220px;
+    background: linear-gradient(45deg, #84cc16, #22c55e);
+    top: 30%;
+    left: 15%;
+    animation-delay: 18s;
+    animation-duration: 24s;
+}
+
+/* Floating animation for body background shapes */
+@keyframes body-float {
+    0%, 100% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+    }
+    20% {
+        transform: translate(30px, -40px) rotate(72deg) scale(1.1);
+    }
+    40% {
+        transform: translate(-20px, 30px) rotate(144deg) scale(0.9);
+    }
+    60% {
+        transform: translate(40px, 20px) rotate(216deg) scale(1.05);
+    }
+    80% {
+        transform: translate(-30px, -20px) rotate(288deg) scale(0.95);
+    }
+}
+
+/* Ensure sections have proper background to show through */
+.hero {
+    background: transparent !important;
+    position: relative;
+    z-index: 1;
+}
+
+.features-showcase {
+    background: transparent !important;
+    position: relative;
+    z-index: 1;
+}
+
+/* Add subtle overlay to improve readability */
+.hero::before,
+.features-showcase::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.3);
+    z-index: -1;
+}
+
+/* Remove individual section backgrounds */
+.features-section {
+    background: transparent !important;
+    position: relative;
+    z-index: 1;
+}
+
+.features-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.4);
+    z-index: -1;
+}
+</style>
+    <!-- Body Background Shapes -->
+<div class="body-background">
+    <div class="body-shape body-shape-1"></div>
+    <div class="body-shape body-shape-2"></div>
+    <div class="body-shape body-shape-3"></div>
+    <div class="body-shape body-shape-4"></div>
+    <div class="body-shape body-shape-5"></div>
+    <div class="body-shape body-shape-6"></div>
+    <div class="body-shape body-shape-7"></div>
+    <div class="body-shape body-shape-8"></div>
+</div>
+
+
+    <!-- Bootstrap Navigation -->
+    <nav class="navbar navbar-custom navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand-custom" href="#">
+                <i class="fas fa-truck-moving"></i>TransFlow Pro
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon-custom"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom" href="#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom" href="#solutions">Solutions</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom" href="#pricing">Pricing</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom" href="#about">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-cta-custom" href="admin">Login</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="floating-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+            <div class="shape shape-4"></div>
+        </div>
+        
+        <div class="hero-content">
+            <h1 class="hero-title">
+                Revolutionize Your Transport Business
+            </h1>
+            <p class="hero-subtitle">
+                Streamline operations, manage fleets, and maximize profits with our intelligent transport management platform designed for modern logistics companies.
+            </p>
+            
+            <div class="hero-buttons">
+                <a href="/admin/" class="btn btn-primary">
+                    <i class="fas fa-rocket me-2"></i>Start Free Trial
+                </a>
+                <a href="#features" class="btn btn-secondary">
+                    <i class="fas fa-play-circle me-2"></i>Watch Demo
+                </a>
+            </div>
+            
+            <div class="feature-icons">
+                <div class="icon-item">
+                    <div class="icon-circle">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <span class="icon-text">Dashboard</span>
+                </div>
+                <div class="icon-item">
+                    <div class="icon-circle">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <span class="icon-text">Billing</span>
+                </div>
+                <div class="icon-item">
+                    <div class="icon-circle">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <span class="icon-text">Fleet Management</span>
+                </div> 
+            </div>
+        </div>
+    </section>
+
+
+
+
+
+
+
+
+
+
+
+
+    <!-- Features Section -->
+<section id="features" class="features-showcase">
+    <div class="features-background">
+        <div class="blur-shape shape-1"></div>
+        <div class="blur-shape shape-2"></div>
+        <div class="blur-shape shape-3"></div>
+        <div class="blur-shape shape-4"></div>
+        <div class="blur-shape shape-5"></div>
+        <div class="blur-shape shape-6"></div>
+    </div>
+    
+    <div class="container">
+        <div class="features-header text-center">
+            <h2 class="features-main-title">Powerful Features for Your Transport Business</h2>
+            <p class="features-main-subtitle">Everything you need to manage your transport operations efficiently</p>
+        </div>
+        
+        <div class="features-showcase-grid">
+            <!-- Feature 1 -->
+            <div class="feature-glass-card" data-aos="fade-up" data-aos-delay="100">
+                <div class="feature-glass-icon">
+                    <div class="feature-icon-bg">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                </div>
+                <h3 class="feature-glass-title">Bill Management</h3>
+                <p class="feature-glass-description">
+                    Automate bill generation, track payments, and manage invoices with our comprehensive billing system.
+                </p>
+                <div class="feature-glass-tags">
+                    <span class="feature-tag">Auto Numbering</span>
+                    <span class="feature-tag">Payment Tracking</span>
+                    <span class="feature-tag">Tax Calculations</span>
+                </div>
+                <div class="feature-glass-glow"></div>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="feature-glass-card" data-aos="fade-up" data-aos-delay="200">
+                <div class="feature-glass-icon">
+                    <div class="feature-icon-bg">
+                        <i class="fas fa-satellite-dish"></i>
+                    </div>
+                </div>
+                <h3 class="feature-glass-title">Vehicle Tracking</h3>
+                <p class="feature-glass-description">
+                    Monitor your fleet in real-time with advanced GPS tracking and maintenance scheduling.
+                </p>
+                <div class="feature-glass-tags">
+                    <span class="feature-tag">Live Location</span>
+                    <span class="feature-tag">Maintenance Alerts</span>
+                    <span class="feature-tag">Route Optimization</span>
+                </div>
+                <div class="feature-glass-glow"></div>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="feature-glass-card" data-aos="fade-up" data-aos-delay="300">
+                <div class="feature-glass-icon">
+                    <div class="feature-icon-bg">
+                        <i class="fas fa-users-gear"></i>
+                    </div>
+                </div>
+                <h3 class="feature-glass-title">Party & Driver Management</h3>
+                <p class="feature-glass-description">
+                    Manage clients, parties, and drivers with detailed profiles and document tracking.
+                </p>
+                <div class="feature-glass-tags">
+                    <span class="feature-tag">Profile Management</span>
+                    <span class="feature-tag">Document Storage</span>
+                    <span class="feature-tag">Contact Management</span>
+                </div>
+                <div class="feature-glass-glow"></div>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="feature-glass-card" data-aos="fade-up" data-aos-delay="400">
+                <div class="feature-glass-icon">
+                    <div class="feature-icon-bg">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                </div>
+                <h3 class="feature-glass-title">Real-time Reporting</h3>
+                <p class="feature-glass-description">
+                    Get instant insights with comprehensive dashboards and customizable reports.
+                </p>
+                <div class="feature-glass-tags">
+                    <span class="feature-tag">Live Dashboards</span>
+                    <span class="feature-tag">Custom Reports</span>
+                    <span class="feature-tag">Export Data</span>
+                </div>
+                <div class="feature-glass-glow"></div>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="feature-glass-card" data-aos="fade-up" data-aos-delay="500">
+                <div class="feature-glass-icon">
+                    <div class="feature-icon-bg">
+                        <i class="fas fa-hand-holding-usd"></i>
+                    </div>
+                </div>
+                <h3 class="feature-glass-title">Commission Tracking</h3>
+                <p class="feature-glass-description">
+                    Automatically calculate and track commissions with detailed payment history.
+                </p>
+                <div class="feature-glass-tags">
+                    <span class="feature-tag">Auto Calculations</span>
+                    <span class="feature-tag">Payment History</span>
+                    <span class="feature-tag">Commission Reports</span>
+                </div>
+                <div class="feature-glass-glow"></div>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="feature-glass-card" data-aos="fade-up" data-aos-delay="600">
+                <div class="feature-glass-icon">
+                    <div class="feature-icon-bg">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                </div>
+                <h3 class="feature-glass-title">Mobile Responsive</h3>
+                <p class="feature-glass-description">
+                    Access your business data anywhere, anytime with our fully responsive design.
+                </p>
+                <div class="feature-glass-tags">
+                    <span class="feature-tag">Any Device</span>
+                    <span class="feature-tag">Touch Friendly</span>
+                    <span class="feature-tag">Offline Support</span>
+                </div>
+                <div class="feature-glass-glow"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Features Showcase Section with Glassmorphism */
+.features-showcase {
+    padding: 6rem 0;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.features-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.blur-shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.4;
+    animation: float-shape 20s infinite linear;
+}
+
+.shape-1 {
+    width: 300px;
+    height: 300px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    top: 10%;
+    left: 5%;
+    animation-delay: 0s;
+}
+
+.shape-2 {
+    width: 200px;
+    height: 200px;
+    background: linear-gradient(45deg, #f59e0b, #f97316);
+    top: 60%;
+    left: 80%;
+    animation-delay: 4s;
+    animation-duration: 15s;
+}
+
+.shape-3 {
+    width: 250px;
+    height: 250px;
+    background: linear-gradient(45deg, #3b82f6, #06b6d4);
+    top: 20%;
+    left: 85%;
+    animation-delay: 8s;
+    animation-duration: 18s;
+}
+
+.shape-4 {
+    width: 180px;
+    height: 180px;
+    background: linear-gradient(45deg, #10b981, #059669);
+    top: 80%;
+    left: 10%;
+    animation-delay: 12s;
+    animation-duration: 12s;
+}
+
+.shape-5 {
+    width: 220px;
+    height: 220px;
+    background: linear-gradient(45deg, #8b5cf6, #a855f7);
+    top: 40%;
+    left: 70%;
+    animation-delay: 6s;
+    animation-duration: 16s;
+}
+
+.shape-6 {
+    width: 280px;
+    height: 280px;
+    background: linear-gradient(45deg, #ef4444, #f97316);
+    top: 15%;
+    left: 60%;
+    animation-delay: 10s;
+    animation-duration: 20s;
+}
+
+.features-header {
+    position: relative;
+    z-index: 2;
+    margin-bottom: 4rem;
+}
+
+.features-main-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    color: white;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff, #cbd5e1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.features-main-subtitle {
+    font-size: 1.2rem;
+    color: #cbd5e1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.features-showcase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+}
+
+.feature-glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
+    padding: 2.5rem 2rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.feature-glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    border-radius: 24px;
+    z-index: -1;
+}
+
+.feature-glass-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.feature-glass-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    border-radius: 24px;
+    z-index: -1;
+}
+
+.feature-glass-card:hover .feature-glass-glow {
+    opacity: 1;
+}
+
+.feature-glass-icon {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.feature-icon-bg {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(245, 158, 11, 0.2));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.4s ease;
+}
+
+.feature-glass-card:hover .feature-icon-bg {
+    transform: scale(1.1) rotate(5deg);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(245, 158, 11, 0.3));
+    box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+}
+
+.feature-icon-bg i {
+    font-size: 2rem;
+    background: #f59e0b;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.feature-glass-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.feature-glass-description {
+    color: #cbd5e1;
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.feature-glass-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.feature-tag {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.feature-glass-card:hover .feature-tag {
+    background: rgba(59, 130, 246, 0.3);
+    color: white;
+    transform: translateY(-2px);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+/* Floating animation for background shapes */
+@keyframes float-shape {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg) scale(1);
+    }
+    25% {
+        transform: translateY(-20px) rotate(90deg) scale(1.1);
+    }
+    50% {
+        transform: translateY(0) rotate(180deg) scale(1);
+    }
+    75% {
+        transform: translateY(20px) rotate(270deg) scale(0.9);
+    }
+}
+
+/* Animation classes for scroll-triggered animations */
+[data-aos] {
+    opacity: 0;
+    transition: all 0.6s ease;
+}
+
+[data-aos].aos-animate {
+    opacity: 1;
+}
+
+[data-aos="fade-up"] {
+    transform: translateY(30px);
+}
+
+[data-aos="fade-up"].aos-animate {
+    transform: translateY(0);
+}
+
+/* Responsive Design for Features Showcase */
+@media (max-width: 768px) {
+    .features-showcase {
+        padding: 4rem 0;
+    }
+
+    .features-showcase-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        padding: 0 1rem;
+    }
+
+    .feature-glass-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .feature-icon-bg {
+        width: 70px;
+        height: 70px;
+    }
+
+    .feature-icon-bg i {
+        font-size: 1.7rem;
+    }
+
+    .feature-glass-title {
+        font-size: 1.3rem;
+    }
+
+    .blur-shape {
+        filter: blur(40px);
+    }
+    
+    .shape-1, .shape-2, .shape-3, .shape-4, .shape-5, .shape-6 {
+        width: 150px;
+        height: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    .features-showcase-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .feature-glass-card {
+        padding: 1.5rem 1rem;
+    }
+
+    .feature-glass-tags {
+        justify-content: flex-start;
+    }
+}
+</style>
+<script>
+    // Enhanced scroll animation for features section
+function initFeaturesAnimations() {
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('aos-animate');
+                
+                // Add staggered animation for cards
+                const delay = entry.target.getAttribute('data-aos-delay') || 0;
+                setTimeout(() => {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }, parseInt(delay));
+            }
+        });
+    }, observerOptions);
+
+    // Observe all feature cards
+    document.querySelectorAll('[data-aos]').forEach(el => {
+        observer.observe(el);
+    });
+}
+
+// Initialize animations when DOM is loaded
+document.addEventListener('DOMContentLoaded', initFeaturesAnimations);
+</script>
+
+
+
+
+
+
+<!-- How It Works Section -->
+<section id="how-it-works" class="process-flow">
+    <div class="container">
+        <div class="process-header text-center">
+            <h2 class="process-main-title">How TransFlow Pro Works</h2>
+            <p class="process-main-subtitle">Get started in just 4 simple steps</p>
+        </div>
+        
+        <div class="process-timeline">
+            <!-- Step 1 -->
+            <div class="process-step" data-aos="fade-right" data-aos-delay="100">
+                <div class="step-indicator">
+                    <div class="step-number">01</div>
+                    <div class="step-connector"></div>
+                </div>
+                <div class="step-content">
+                    <div class="step-icon-wrapper">
+                        <div class="step-icon-orb">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="step-pulse"></div>
+                    </div>
+                    <div class="step-text">
+                        <h3 class="step-title">Create Your Account</h3>
+                        <p class="step-description">
+                            Sign up and set up your business profile in minutes. Add your company details and get instant access.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="process-step" data-aos="fade-left" data-aos-delay="200">
+                <div class="step-indicator">
+                    <div class="step-number">02</div>
+                    <div class="step-connector"></div>
+                </div>
+                <div class="step-content">
+                    <div class="step-icon-wrapper">
+                        <div class="step-icon-orb">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div class="step-pulse"></div>
+                    </div>
+                    <div class="step-text">
+                        <h3 class="step-title">Add Vehicles & Drivers</h3>
+                        <p class="step-description">
+                            Register your fleet and drivers with complete details, documents, and specifications.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="process-step" data-aos="fade-right" data-aos-delay="300">
+                <div class="step-indicator">
+                    <div class="step-number">03</div>
+                    <div class="step-connector"></div>
+                </div>
+                <div class="step-content">
+                    <div class="step-icon-wrapper">
+                        <div class="step-icon-orb">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div class="step-pulse"></div>
+                    </div>
+                    <div class="step-text">
+                        <h3 class="step-title">Generate Bills & Manage</h3>
+                        <p class="step-description">
+                            Create professional bills, track payments, and manage commissions automatically.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="process-step" data-aos="fade-left" data-aos-delay="400">
+                <div class="step-indicator">
+                    <div class="step-number">04</div>
+                </div>
+                <div class="step-content">
+                    <div class="step-icon-wrapper">
+                        <div class="step-icon-orb">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="step-pulse"></div>
+                    </div>
+                    <div class="step-text">
+                        <h3 class="step-title">Analyze & Grow</h3>
+                        <p class="step-description">
+                            Use real-time analytics to make data-driven decisions and scale your business.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA Button -->
+        <div class="process-cta text-center" data-aos="fade-up" data-aos-delay="500">
+            <a href="/admin/" class="btn-process-cta">
+                <span>Start Your Journey Today</span>
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* How It Works Section - Process Flow */
+.process-flow {
+    padding: 6rem 0;
+    position: relative;
+    background: linear-gradient(135deg, #20256e, #422e03);
+    z-index: 1;
+}
+
+.process-header {
+    margin-bottom: 5rem;
+}
+
+.process-main-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    color: white;
+    margin-bottom: 1rem;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.process-main-subtitle {
+    font-size: 1.2rem;
+    color: #cbd5e1;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.process-timeline {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.process-timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(180deg, 
+        rgba(59, 130, 246, 0.3) 0%, 
+        rgba(245, 158, 11, 0.3) 50%, 
+        rgba(59, 130, 246, 0.3) 100%);
+    border-radius: 10px;
+}
+
+.process-step {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4rem;
+    position: relative;
+}
+
+.process-step:nth-child(odd) {
+    flex-direction: row;
+}
+
+.process-step:nth-child(even) {
+    flex-direction: row-reverse;
+}
+
+.process-step:last-child {
+    margin-bottom: 0;
+}
+
+.step-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 2;
+}
+
+.step-number {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(245, 158, 11, 0.2));
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: white;
+    transition: all 0.4s ease;
+    position: relative;
+    z-index: 3;
+}
+
+.process-step:hover .step-number {
+    transform: scale(1.1);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(245, 158, 11, 0.4));
+    box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.step-connector {
+    width: 3px;
+    height: 120px;
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.4), rgba(245, 158, 11, 0.4));
+    margin: 1rem 0;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.step-connector::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    animation: connector-flow 2s infinite linear;
+}
+
+.step-content {
+    flex: 1;
+    margin: 0 3rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.process-step:nth-child(odd) .step-content {
+    flex-direction: row;
+}
+
+.process-step:nth-child(even) .step-content {
+    flex-direction: row-reverse;
+}
+
+.step-icon-wrapper {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.step-icon-orb {
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+    transition: all 0.4s ease;
+}
+
+.process-step:hover .step-icon-orb {
+    transform: scale(1.1) rotate(10deg);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+}
+
+.step-icon-orb i {
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, #3b82f6, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: all 0.4s ease;
+}
+
+.process-step:hover .step-icon-orb i {
+    transform: scale(1.1);
+}
+
+.step-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    border: 2px solid rgba(59, 130, 246, 0.3);
+    border-radius: 50%;
+    animation: step-pulse 2s infinite;
+    z-index: 1;
+}
+
+.step-text {
+    flex: 1;
+}
+
+.step-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.8rem;
+    background: linear-gradient(135deg, #fff, #e2e8f0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.step-description {
+    color: #cbd5e1;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+/* Process CTA */
+.process-cta {
+    margin-top: 4rem;
+}
+
+.btn-process-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(245, 158, 11, 0.2));
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 1.2rem 2.5rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-decoration: none;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-process-cta::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+}
+
+.btn-process-cta:hover {
+    transform: translateY(-3px);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(245, 158, 11, 0.3));
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.btn-process-cta:hover::before {
+    left: 100%;
+}
+
+.btn-process-cta i {
+    transition: transform 0.3s ease;
+}
+
+.btn-process-cta:hover i {
+    transform: translateX(5px);
+}
+
+/* Animations */
+@keyframes connector-flow {
+    0% {
+        transform: translateY(-100%);
+    }
+    100% {
+        transform: translateY(100%);
+    }
+}
+
+@keyframes step-pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 1;
+    }
+    70% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .process-flow {
+        padding: 4rem 0;
+    }
+
+    .process-timeline::before {
+        left: 30px;
+    }
+
+    .process-step {
+        flex-direction: row !important;
+        margin-bottom: 3rem;
+    }
+
+    .step-indicator {
+        margin-right: 2rem;
+    }
+
+    .step-content {
+        margin: 0;
+        flex-direction: row !important;
+        gap: 1.5rem;
+    }
+
+    .step-icon-orb {
+        width: 80px;
+        height: 80px;
+    }
+
+    .step-icon-orb i {
+        font-size: 1.8rem;
+    }
+
+    .step-pulse {
+        width: 100px;
+        height: 100px;
+    }
+
+    .step-title {
+        font-size: 1.3rem;
+    }
+
+    .step-description {
+        font-size: 0.9rem;
+    }
+
+    .btn-process-cta {
+        padding: 1rem 2rem;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .process-step {
+        margin-bottom: 2.5rem;
+    }
+
+    .step-content {
+        gap: 1rem;
+    }
+
+    .step-icon-orb {
+        width: 70px;
+        height: 70px;
+    }
+
+    .step-icon-orb i {
+        font-size: 1.6rem;
+    }
+
+    .step-pulse {
+        width: 90px;
+        height: 90px;
+    }
+
+    .step-number {
+        width: 60px;
+        height: 60px;
+        font-size: 1rem;
+    }
+
+    .step-connector {
+        height: 100px;
+    }
+}
+</style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Benefits Section -->
+<section id="benefits" class="benefits-showcase">
+    <div class="benefits-container">
+        <div class="benefits-header text-center">
+            <h2 class="benefits-main-title">Transform Your Business Outcomes</h2>
+            <p class="benefits-main-subtitle">Experience measurable improvements across all operations</p>
+        </div>
+        
+        <div class="benefits-timeline">
+            <!-- Benefit 1 -->
+            <div class="benefit-item" data-aos="fade-right" data-aos-delay="100">
+                <div class="benefit-visual">
+                    <div class="benefit-orb">
+                        <div class="benefit-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="benefit-wave"></div>
+                        <div class="benefit-pulse"></div>
+                    </div>
+                    <div class="benefit-progress">
+                        <div class="progress-track">
+                            <div class="progress-fill" data-percent="70"></div>
+                        </div>
+                        <div class="progress-label">70% Faster</div>
+                    </div>
+                </div>
+                <div class="benefit-content">
+                    <h3 class="benefit-title">Time Savings</h3>
+                    <p class="benefit-description">
+                        Automate manual processes and reduce administrative work by hours each day with our streamlined workflow system.
+                    </p>
+                    <div class="benefit-stats">
+                        <div class="stat">
+                            <span class="stat-number">5+</span>
+                            <span class="stat-text">Hours Saved Daily</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">10x</span>
+                            <span class="stat-text">Faster Processing</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="benefit-connector"></div>
+            </div>
+
+            <!-- Benefit 2 -->
+            <div class="benefit-item" data-aos="fade-left" data-aos-delay="200">
+                <div class="benefit-visual">
+                    <div class="benefit-orb">
+                        <div class="benefit-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="benefit-wave"></div>
+                        <div class="benefit-pulse"></div>
+                    </div>
+                    <div class="benefit-progress">
+                        <div class="progress-track">
+                            <div class="progress-fill" data-percent="45"></div>
+                        </div>
+                        <div class="progress-label">45% Cost Reduction</div>
+                    </div>
+                </div>
+                <div class="benefit-content">
+                    <h3 class="benefit-title">Cost Reduction</h3>
+                    <p class="benefit-description">
+                        Optimize operations and eliminate wasteful spending with intelligent resource allocation and tracking.
+                    </p>
+                    <div class="benefit-stats">
+                        <div class="stat">
+                            <span class="stat-number">₹2.5Cr+</span>
+                            <span class="stat-text">Annual Savings</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">60%</span>
+                            <span class="stat-text">Lower Overheads</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="benefit-connector"></div>
+            </div>
+
+            <!-- Benefit 3 -->
+            <div class="benefit-item" data-aos="fade-right" data-aos-delay="300">
+                <div class="benefit-visual">
+                    <div class="benefit-orb">
+                        <div class="benefit-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <div class="benefit-wave"></div>
+                        <div class="benefit-pulse"></div>
+                    </div>
+                    <div class="benefit-progress">
+                        <div class="progress-track">
+                            <div class="progress-fill" data-percent="95"></div>
+                        </div>
+                        <div class="progress-label">95% Accuracy</div>
+                    </div>
+                </div>
+                <div class="benefit-content">
+                    <h3 class="benefit-title">Error Minimization</h3>
+                    <p class="benefit-description">
+                        Eliminate manual errors with automated calculations, validation checks, and consistent data handling.
+                    </p>
+                    <div class="benefit-stats">
+                        <div class="stat">
+                            <span class="stat-number">99.8%</span>
+                            <span class="stat-text">Data Accuracy</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">0</span>
+                            <span class="stat-text">Manual Errors</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="benefit-connector"></div>
+            </div>
+
+            <!-- Benefit 4 -->
+            <div class="benefit-item" data-aos="fade-left" data-aos-delay="400">
+                <div class="benefit-visual">
+                    <div class="benefit-orb">
+                        <div class="benefit-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="benefit-wave"></div>
+                        <div class="benefit-pulse"></div>
+                    </div>
+                    <div class="benefit-progress">
+                        <div class="progress-track">
+                            <div class="progress-fill" data-percent="100"></div>
+                        </div>
+                        <div class="progress-label">Real-time Insights</div>
+                    </div>
+                </div>
+                <div class="benefit-content">
+                    <h3 class="benefit-title">Better Decision Making</h3>
+                    <p class="benefit-description">
+                        Make informed decisions with comprehensive analytics, real-time data, and predictive insights.
+                    </p>
+                    <div class="benefit-stats">
+                        <div class="stat">
+                            <span class="stat-number">24/7</span>
+                            <span class="stat-text">Live Monitoring</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">50+</span>
+                            <span class="stat-text">Report Types</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Animated Summary -->
+        <div class="benefits-summary" data-aos="fade-up" data-aos-delay="500">
+            <div class="summary-orb">
+                <div class="summary-content">
+                    <div class="summary-value">4.8x</div>
+                    <div class="summary-label">Average ROI</div>
+                </div>
+                <div class="summary-ring summary-ring-1"></div>
+                <div class="summary-ring summary-ring-2"></div>
+                <div class="summary-ring summary-ring-3"></div>
+            </div>
+            <div class="summary-text">
+                <h3>Join 500+ Successful Transport Businesses</h3>
+                <p>Start your transformation journey today and experience the difference</p>
+                <a href="/admin/" class="btn-benefit-cta">
+                    <span>Get Started Now</span>
+                    <i class="fas fa-rocket"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+<style>
+    /* Benefits Showcase Section */
+.benefits-showcase {
+    padding: 6rem 0;
+    position: relative;
+    z-index: 1;
+}
+
+.benefits-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+.benefits-header {
+    margin-bottom: 5rem;
+}
+
+.benefits-main-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    color: white;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff, #cbd5e1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.benefits-main-subtitle {
+    font-size: 1.2rem;
+    color: #cbd5e1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Benefits Timeline */
+.benefits-timeline {
+    position: relative;
+    margin-bottom: 4rem;
+}
+
+.benefits-timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(180deg, 
+        rgba(59, 130, 246, 0.3) 0%, 
+        rgba(245, 158, 11, 0.3) 25%, 
+        rgba(16, 185, 129, 0.3) 50%, 
+        rgba(139, 92, 246, 0.3) 75%, 
+        rgba(59, 130, 246, 0.3) 100%);
+    border-radius: 10px;
+}
+
+.benefit-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4rem;
+    position: relative;
+}
+
+.benefit-item:nth-child(odd) {
+    flex-direction: row;
+}
+
+.benefit-item:nth-child(even) {
+    flex-direction: row-reverse;
+}
+
+.benefit-item:last-child {
+    margin-bottom: 0;
+}
+
+.benefit-visual {
+    flex: 0 0 45%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 2rem;
+}
+
+.benefit-orb {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.benefit-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(245, 158, 11, 0.2));
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 3;
+    transition: all 0.4s ease;
+}
+
+.benefit-item:hover .benefit-icon {
+    transform: scale(1.1) rotate(10deg);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(245, 158, 11, 0.3));
+    box-shadow: 0 15px 40px rgba(59, 130, 246, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.benefit-icon i {
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, #3b82f6, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.benefit-wave {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    border: 2px solid rgba(59, 130, 246, 0.3);
+    border-radius: 50%;
+    animation: benefit-wave 3s infinite ease-in-out;
+}
+
+.benefit-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 140px;
+    height: 140px;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 50%;
+    animation: benefit-pulse 2s infinite;
+}
+
+.benefit-progress {
+    width: 100%;
+    max-width: 300px;
+}
+
+.progress-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #f59e0b);
+    border-radius: 10px;
+    width: 0%;
+    transition: width 1.5s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: progress-shine 2s infinite;
+}
+
+.progress-label {
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.benefit-content {
+    flex: 1;
+    padding: 0 2rem;
+}
+
+.benefit-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff, #e2e8f0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.benefit-description {
+    color: #cbd5e1;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+
+.benefit-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 0.3rem;
+    background: linear-gradient(135deg, #3b82f6, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-text {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    font-weight: 500;
+}
+
+.benefit-connector {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.5), rgba(245, 158, 11, 0.5));
+    z-index: 2;
+}
+
+/* Benefits Summary */
+.benefits-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4rem;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    padding: 3rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.summary-orb {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.summary-content {
+    width: 150px;
+    height: 150px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(245, 158, 11, 0.2));
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+}
+
+.summary-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: white;
+    line-height: 1;
+    background: linear-gradient(135deg, #3b82f6, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.summary-label {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.summary-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 50%;
+    animation: summary-rotate 4s infinite linear;
+}
+
+.summary-ring-1 {
+    width: 180px;
+    height: 180px;
+    animation-delay: 0s;
+}
+
+.summary-ring-2 {
+    width: 210px;
+    height: 210px;
+    animation-delay: 0.5s;
+    animation-direction: reverse;
+}
+
+.summary-ring-3 {
+    width: 240px;
+    height: 240px;
+    animation-delay: 1s;
+}
+
+.summary-text {
+    flex: 1;
+    text-align: left;
+}
+
+.summary-text h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.summary-text p {
+    color: #cbd5e1;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+.btn-benefit-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: linear-gradient(135deg, #3b82f6, #f59e0b);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.4s ease;
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+}
+
+.btn-benefit-cta:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4);
+}
+
+.btn-benefit-cta i {
+    transition: transform 0.3s ease;
+}
+
+.btn-benefit-cta:hover i {
+    transform: translateX(5px);
+}
+
+/* Animations */
+@keyframes benefit-wave {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 0.7;
+    }
+}
+
+@keyframes benefit-pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 1;
+    }
+    70% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0;
+    }
+}
+
+@keyframes progress-shine {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+@keyframes summary-rotate {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+    .benefits-timeline::before {
+        left: 30px;
+    }
+
+    .benefit-item {
+        flex-direction: row !important;
+        margin-bottom: 3rem;
+    }
+
+    .benefit-visual {
+        flex: 0 0 200px;
+        padding: 0 1rem 0 0;
+    }
+
+    .benefit-content {
+        padding: 0 0 0 1rem;
+    }
+
+    .benefit-connector {
+        display: none;
+    }
+
+    .benefits-summary {
+        flex-direction: column;
+        gap: 2rem;
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .summary-text {
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .benefits-showcase {
+        padding: 4rem 0;
+    }
+
+    .benefit-visual {
+        flex: 0 0 150px;
+    }
+
+    .benefit-icon {
+        width: 80px;
+        height: 80px;
+    }
+
+    .benefit-icon i {
+        font-size: 2rem;
+    }
+
+    .benefit-wave {
+        width: 100px;
+        height: 100px;
+    }
+
+    .benefit-pulse {
+        width: 120px;
+        height: 120px;
+    }
+
+    .benefit-stats {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .summary-content {
+        width: 120px;
+        height: 120px;
+    }
+
+    .summary-value {
+        font-size: 2rem;
+    }
+
+    .summary-ring-1 {
+        width: 150px;
+        height: 150px;
+    }
+
+    .summary-ring-2 {
+        width: 180px;
+        height: 180px;
+    }
+
+    .summary-ring-3 {
+        width: 210px;
+        height: 210px;
+    }
+}
+
+@media (max-width: 480px) {
+    .benefit-item {
+        flex-direction: column !important;
+        text-align: center;
+    }
+
+    .benefit-visual {
+        flex: none;
+        padding: 0;
+        margin-bottom: 1.5rem;
+    }
+
+    .benefit-content {
+        padding: 0;
+    }
+
+    .benefit-stats {
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+
+/* Initialize progress bars when in view */
+.benefit-item.in-view .progress-fill {
+    width: var(--progress-width);
+}
+</style>
+
+<script>
+    // Animate progress bars when in view
+function initProgressBars() {
+    const progressBars = document.querySelectorAll('.progress-fill');
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const progressBar = entry.target;
+                const percent = progressBar.getAttribute('data-percent');
+                progressBar.style.setProperty('--progress-width', percent + '%');
+                progressBar.parentElement.parentElement.parentElement.parentElement.classList.add('in-view');
+            }
+        });
+    }, { threshold: 0.5 });
+
+    progressBars.forEach(bar => observer.observe(bar));
+}
+
+document.addEventListener('DOMContentLoaded', initProgressBars);
+</script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar-custom');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    
+                    // Close mobile menu after clicking (for Bootstrap)
+                    const navbarToggler = document.querySelector('.navbar-toggler');
+                    const navbarCollapse = document.querySelector('.navbar-collapse');
+                    if (navbarCollapse.classList.contains('show')) {
+                        navbarToggler.click();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
