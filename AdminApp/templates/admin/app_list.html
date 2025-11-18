@@ -1,0 +1,11 @@
+{% for app in app_list %}
+    {{ block.super }}
+{% endfor %}
+
+<div class="app-card">
+    <h2>Useful Links</h2>
+    <ul class="model-list">
+        <li><a href="/admin/custom-report/">📊 Custom Report</a></li>
+        <li><a href="/settings/">⚙ Settings</a></li>
+    </ul>
+</div>

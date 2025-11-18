@@ -280,7 +280,11 @@ class Vehicle(models.Model, RoleBasedAccessMixin):
         
         # Validate owner-business consistency
         self._validate_owner_business_consistency()
- 
+        if len(self.vehicle_number) < 8:
+            raise ValidationError({
+                'vehicle_number': 'Vehicle number seems too short. Minimum 8 characters required.'
+            })
+    
     def _validate_vehicle_number(self):
         """Validate and format vehicle number"""
         if self.vehicle_number:
@@ -802,39 +806,67 @@ class Bill(models.Model):
         if self.commission_charge:
             self.commission_pending = self.commission_charge - (self.commission_received or 0)
  
-
     def save(self, *args, **kwargs):
-        # Auto-generate bill number if not set
-        if not self.bill_number:
-            # Generate a prefix from business label
-            if self.business and self.business.business_label:
-                words = self.business.business_label.strip().split()
+        # Only generate bill number if it's a new record and bill_number is empty
+        if not self.pk and not self.bill_number:
+            try:
+                # Generate a prefix from business label
+                if self.business and self.business.business_label:
+                    words = self.business.business_label.strip().split()
 
-                if len(words) == 1:
-                    # Single word → take first 3 letters
-                    business_prefix = words[0][:3].upper()
-                elif len(words) == 2:
-                    # Two words → take first letter of each
-                    business_prefix = (words[0][0] + words[1][0]).upper()
+                    if len(words) == 1:
+                        # Single word → take first 3 letters
+                        business_prefix = words[0][:3].upper()
+                    elif len(words) == 2:
+                        # Two words → take first letter of each
+                        business_prefix = (words[0][0] + words[1][0]).upper()
+                    else:
+                        # Three or more → take first letter of each up to 3 letters
+                        business_prefix = ''.join(w[0] for w in words[:3]).upper()
                 else:
-                    # Three or more → take first letter of each up to 3 letters
-                    business_prefix = ''.join(w[0] for w in words[:3]).upper()
-            else:
-                business_prefix = "BILL"
+                    business_prefix = "BILL"
 
-            # Find the last bill for this business
-            last_bill = Bill.objects.filter(business=self.business).order_by('-id').first()
-            if last_bill and last_bill.bill_number:
+                # Find the last bill for this business with proper error handling
                 try:
-                    last_number = int(last_bill.bill_number.split('-')[-1])
-                    next_number = last_number + 1
-                except (ValueError, IndexError):
+                    last_bill = Bill.objects.filter(business=self.business).order_by('-id').first()
+                    if last_bill and last_bill.bill_number:
+                        try:
+                            # Extract number from format like "ABC-0001"
+                            last_number_str = last_bill.bill_number.split('-')[-1]
+                            last_number = int(last_number_str)
+                            next_number = last_number + 1
+                        except (ValueError, IndexError):
+                            next_number = 1
+                    else:
+                        next_number = 1
+                except Exception as e:
+                    # Fallback if there's any issue querying the database
+                    print(f"DEBUG: Error getting last bill: {e}")
                     next_number = 1
-            else:
-                next_number = 1
 
-            # Assign formatted bill number
-            self.bill_number = f"{business_prefix}-{str(next_number).zfill(4)}"
+                # Generate bill number and ensure uniqueness
+                max_attempts = 10
+                for attempt in range(max_attempts):
+                    bill_number_candidate = f"{business_prefix}-{str(next_number).zfill(4)}"
+                    
+                    # Check if this bill number already exists
+                    if not Bill.objects.filter(bill_number=bill_number_candidate).exists():
+                        self.bill_number = bill_number_candidate
+                        break
+                        
+                    next_number += 1
+                else:
+                    # If we exhausted all attempts, use a timestamp-based fallback
+                    import time
+                    timestamp = int(time.time())
+                    self.bill_number = f"{business_prefix}-{timestamp}"
+
+            except Exception as e:
+                # Ultimate fallback
+                import time
+                timestamp = int(time.time())
+                self.bill_number = f"BILL-{timestamp}"
+                print(f"DEBUG: Error generating bill number, using fallback: {e}")
 
         # Ensure calculations are done before saving
         self.clean()
@@ -843,152 +875,4 @@ class Bill(models.Model):
 
     def get_business(self):
         return self.business
-
-
-
-
-
-
-# class Bill(models.Model):
-#     business = models.ForeignKey(Business, on_delete=models.CASCADE)
-#     bill_number = models.CharField(max_length=20, unique=True, editable=False, db_index=True)
-#     party = models.ForeignKey('Party', on_delete=models.SET_NULL, related_name='bills', verbose_name="Party Name", null=True, blank=True)
-#     driver = models.ForeignKey('Driver', on_delete=models.SET_NULL, null=True, blank=True, related_name='bills', verbose_name="Driver")
-#     vehicle = models.ForeignKey('Vehicle', on_delete=models.CASCADE, related_name='bills', verbose_name="Vehicle")
-#     reference = models.ForeignKey('VehicleOwner', on_delete=models.SET_NULL, null=True, blank=True, related_name='referenced_bills', verbose_name="Referenced By")
-    
-#     from_location = models.CharField(max_length=255, verbose_name="From Location")
-#     to_location = models.CharField(max_length=255, verbose_name="To Location")
-#     material_type = models.CharField(max_length=255, null=True, blank=True, verbose_name="Type of Material")
-#     rent_amount = models.DecimalField(max_digits=10, decimal_places=0, verbose_name="Rent Amount")
-#     advance_amount = models.DecimalField(max_digits=10, decimal_places=0, verbose_name="Advance Amount")
-#     pending_amount = models.DecimalField(max_digits=10, decimal_places=0, default=0, verbose_name="Pending Amount")
-#     commission = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True, default=0, verbose_name="Commission %")
-#     commission_charge = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True, default=0, verbose_name="Commission Amount")
-#     commission_received = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True, default=0, verbose_name="Commission Received")
-#     commission_pending = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True, default=0, verbose_name="Commission Pending")
-    
-#     notes = models.TextField(null=True, blank=True, verbose_name="Additional Notes")
-    
-#     # Bill related photos
-#     loading_photo = models.ImageField(upload_to='bill_photos/loading/', null=True, blank=True, verbose_name="Loading Photo")
-#     unloading_photo = models.ImageField(upload_to='bill_photos/unloading/', null=True, blank=True, verbose_name="Unloading Photo")
-#     document_photo = models.ImageField(upload_to='bill_photos/documents/', null=True, blank=True, verbose_name="Document Photo")
  
-#     bill_date = models.DateField(verbose_name="Bill Date")
-#     commission_received_date = models.DateField(null=True, blank=True, verbose_name="Commission Received Date")
-
-#     objects = BusinessManager()
-#     class Meta: 
-#         ordering = ['-bill_date']
-#         verbose_name = "Bill"
-#         verbose_name_plural = "Bills"
-
-#     def __str__(self):
-#         return f"Bill #{self.bill_number} - {self.party.name if self.party else 'Unknown'}"
-
-#     @property
-#     def display_name(self):
-#         """Display bill number with party name for admin"""
-#         party_name = self.party.name if self.party else 'Unknown Party'
-#         return f"Bill #{self.bill_number} - {party_name}"
-
-#     @property
-#     def photo_preview(self):
-#         """Display loading photo preview in admin"""
-#         if self.loading_photo:
-#             return format_html('<img src="{}" width="50" height="50" />', self.loading_photo.url)
-#         return "No Photo"
-    
-#     photo_preview.fget.short_description = 'Loading Photo'
-
-#     @property
-#     def payment_status(self):
-#         """Calculate payment status"""
-#         if self.pending_amount == 0:
-#             return "Paid"
-#         elif self.advance_amount == 0:
-#             return "Pending"
-#         else:
-#             return "Partially Paid"
-    
-#     payment_status.fget.short_description = 'Payment Status'
-
-#     @property
-#     def commission_status(self):
-#         """Calculate commission status"""
-#         if not self.commission_charge or self.commission_charge == 0:
-#             return "No Commission"
-#         elif self.commission_pending == 0:
-#             return "Commission Paid"
-#         elif self.commission_received == 0:
-#             return "Commission Pending"
-#         else:
-#             return "Commission Partially Paid"
-    
-#     commission_status.fget.short_description = 'Commission Status'
-
-#     @property
-#     def trip_route(self):
-#         """Display trip route"""
-#         return f"{self.from_location} to {self.to_location}"
-    
-#     trip_route.fget.short_description = 'Trip Route'
-
-#     def clean(self):
-#         """Enhanced validation for bill data"""
-#         # Auto-calculate pending amount
-#         self.pending_amount = self.rent_amount - self.advance_amount
-        
-#         # Auto-calculate commission charge if commission percentage is provided
-#         if self.commission and self.commission > 0 and not self.commission_charge:
-#             self.commission_charge = (self.rent_amount * self.commission) / 100
-        
-#         # Auto-calculate commission pending
-#         if self.commission_charge:
-#             self.commission_pending = self.commission_charge - (self.commission_received or 0)
-
-#         # Validate amounts
-#         if self.advance_amount > self.rent_amount:
-#             raise ValidationError({'advance_amount': 'Advance amount cannot exceed rent amount.'})
-        
-#         if self.commission_received > self.commission_charge:
-#             raise ValidationError({'commission_received': 'Commission received cannot exceed commission charge.'})
-        
-#         if self.pending_amount < 0:
-#             raise ValidationError("Pending amount cannot be negative.")
-
-#         # Validate commission received date
-#         if self.commission_received_date and not self.commission_received:
-#             raise ValidationError({
-#                 'commission_received_date': 'Commission received date cannot be set without commission received amount.'
-#             })
-
-#     def save(self, *args, **kwargs):
-#         # Auto-generate bill number if not set
-#         if not self.bill_number:
-#             # Generate bill number specific to business
-#             business_prefix = self.business.business_label if self.business and self.business.business_label else "BILL"
-#             last_bill = Bill.objects.filter(business=self.business).order_by('-id').first()
-            
-#             if last_bill and last_bill.bill_number:
-#                 try:
-#                     # Extract number and increment
-#                     last_number = int(last_bill.bill_number.split('-')[-1])
-#                     next_number = last_number + 1
-#                 except (ValueError, IndexError):
-#                     next_number = 1
-#             else:
-#                 next_number = 1
-                
-#             self.bill_number = f"{business_prefix}-{str(next_number).zfill(4)}"
-        
-#         # Ensure calculations are done before saving
-#         self.clean()
-#         super().save(*args, **kwargs)
-
-#     def get_business(self):
-#         return self.business
-
-
-

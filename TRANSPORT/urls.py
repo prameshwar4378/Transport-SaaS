@@ -25,6 +25,10 @@ urlpatterns = [
     path('', views.index, name='admin_index'),
     path('bill/<int:bill_id>/print/', views.bill_print_view, name='bill_print'),
     path('bill/print/', views.bills_print_view, name='bills_print'),
+    path('report-dashboard/', views.report_dashboard, name='report_dashboard'),
+    # path('api/dashboard-data/', views.dashboard_data_api, name='dashboard_data_api'),
+
+
 ]+static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT) 
 if settings.DEBUG:
     import debug_toolbar

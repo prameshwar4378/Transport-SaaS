@@ -1,0 +1,843 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+:root {
+    --primary: #4361ee;
+    --secondary: #3f37c9;
+    --success: #4CAF50;
+    --info: #2196F3;
+    --warning: #FF9800;
+    --danger: #F44336;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --gradient: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+}
+
+/* Reset Admin Container */
+#container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Dashboard Full Width */
+.dashboard-container {
+    background: #f8fafc;
+    min-height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.dashboard-header {
+    background: var(--gradient);
+    color: white;
+    padding: 2rem 0;
+    margin: 0;
+    width: 100%;
+}
+
+.dashboard-content {
+    padding: 2rem;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Full Width Container */
+.dashboard-container .container-fluid {
+    width: 100%;
+    max-width: 100%;
+    padding: 0 2rem;
+    margin: 0;
+}
+
+/* Filter Section */
+.filter-section {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    width: 100%;
+}
+
+/* Quick Stats - 6 columns for additional commission cards */
+.quick-stats {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+    width: 100%;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient);
+}
+
+.stat-card.revenue { border-left: 4px solid #4CAF50; }
+.stat-card.advance { border-left: 4px solid #FF9800; }
+.stat-card.pending { border-left: 4px solid #F44336; }
+.stat-card.commission { border-left: 4px solid #9C27B0; }
+.stat-card.commission-received { border-left: 4px solid #2196F3; }
+.stat-card.commission-pending { border-left: 4px solid #FF5722; }
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    margin: 0 auto 1rem auto;
+}
+
+.stat-card.revenue .stat-icon { background: #E8F5E8; color: #4CAF50; }
+.stat-card.advance .stat-icon { background: #FFF3E0; color: #FF9800; }
+.stat-card.pending .stat-icon { background: #FFEBEE; color: #F44336; }
+.stat-card.commission .stat-icon { background: #F3E5F5; color: #9C27B0; }
+.stat-card.commission-received .stat-icon { background: #E3F2FD; color: #2196F3; }
+.stat-card.commission-pending .stat-icon { background: #FFE0B2; color: #FF5722; }
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+    color: var(--dark);
+}
+
+.stat-label {
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.stat-trend {
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.trend-up { color: #4CAF50; }
+.trend-down { color: #F44336; }
+
+/* Charts Grid - Full Width */
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    width: 100%;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--dark);
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 0.5rem;
+}
+
+.chart-container {
+    flex: 1;
+    min-height: 300px;
+    width: 100%;
+    position: relative;
+}
+
+/* Quick Links */
+.quick-links {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+    width: 100%;
+}
+
+.quick-link-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    text-decoration: none;
+    color: var(--dark);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
+}
+
+.quick-link-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.quick-link-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--primary);
+}
+
+.quick-link-text {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Recent Activity */
+.recent-activity {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    margin-bottom: 2rem;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #E8F5E8;
+    color: #4CAF50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--dark);
+}
+
+.activity-meta {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+/* Summary Cards */
+.summary-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    margin-bottom: 1.5rem;
+}
+
+.summary-list .d-flex {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.summary-list .d-flex:last-child {
+    border-bottom: none;
+}
+
+.summary-list strong {
+    color: var(--primary);
+}
+
+/* Badges */
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-paid { background: #E8F5E8; color: #4CAF50; }
+.badge-pending { background: #FFEBEE; color: #F44336; }
+.badge-partial { background: #FFF3E0; color: #FF9800; }
+
+/* No Data State */
+.no-data {
+    text-align: center;
+    padding: 3rem;
+    color: #64748b;
+    width: 100%;
+}
+
+.no-data i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.no-data p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+    .quick-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 1200px) {
+    .quick-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .chart-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-links {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-content {
+        padding: 1rem;
+    }
+    
+    .quick-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-links {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stat-value {
+        font-size: 1.3rem;
+    }
+}
+
+/* Form Styles */
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 0.75rem;
+}
+
+.btn {
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: var(--gradient);
+    border: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="dashboard-title mb-2">
+                        <i class="fas fa-chart-line"></i> Business Analytics Dashboard
+                    </h1>
+                    <p class="dashboard-subtitle mb-0">
+                        {{ business.business_name }} - Real-time Insights & Performance Metrics
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    {% if request.user.is_system_admin %}
+                    <select class="form-select" id="businessSelect" onchange="updateBusiness(this.value)">
+                        <option value="">Select Business</option>
+                        {% for biz in businesses %}
+                        <option value="{{ biz.id }}" {% if biz.id == business.id %}selected{% endif %}>
+                            {{ biz.business_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-content">
+        <div class="container-fluid">
+            <!-- Date Filter -->
+            <div class="filter-section">
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Start Date</label>
+                        <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">End Date</label>
+                        <input type="date" class="form-control" name="end_date" value="{{ end_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter"></i> Apply Filters
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'report_dashboard' %}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-refresh"></i> Reset Filters
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Quick Stats - Now with 6 cards -->
+            <div class="quick-stats">
+                <div class="stat-card revenue">
+                    <div class="stat-icon">
+                        <i class="fas fa-rupee-sign"></i>
+                    </div>
+                    <div class="stat-value">₹{{ total_revenue|floatformat:0 }}</div>
+                    <div class="stat-label">Total Revenue</div>
+                    <div class="stat-trend trend-up">
+                        <i class="fas fa-arrow-up"></i> Overall Performance
+                    </div>
+                </div>
+                
+                <div class="stat-card advance">
+                    <div class="stat-icon">
+                        <i class="fas fa-hand-holding-usd"></i>
+                    </div>
+                    <div class="stat-value">₹{{ total_advance|floatformat:0 }}</div>
+                    <div class="stat-label">Advance Received</div>
+                    <div class="stat-trend trend-up">
+                        <i class="fas fa-check-circle"></i> Collected
+                    </div>
+                </div>
+                
+                <div class="stat-card pending">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-value">₹{{ total_pending|floatformat:0 }}</div>
+                    <div class="stat-label">Pending Amount</div>
+                    <div class="stat-trend trend-down">
+                        <i class="fas fa-exclamation-circle"></i> Needs Attention
+                    </div>
+                </div>
+                
+                <div class="stat-card commission">
+                    <div class="stat-icon">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="stat-value">₹{{ total_commission|floatformat:0 }}</div>
+                    <div class="stat-label">Total Commission</div>
+                    <div class="stat-trend">
+                        <i class="fas fa-chart-bar"></i> Commission Analysis
+                    </div>
+                </div>
+
+                <div class="stat-card commission-received">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-value">₹{{ total_commission_received|floatformat:0 }}</div>
+                    <div class="stat-label">Commission Received</div>
+                    <div class="stat-trend trend-up">
+                        <i class="fas fa-arrow-up"></i> Received
+                    </div>
+                </div>
+
+                <div class="stat-card commission-pending">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-value">₹{{ total_commission_pending|floatformat:0 }}</div>
+                    <div class="stat-label">Commission Pending</div>
+                    <div class="stat-trend trend-down">
+                        <i class="fas fa-exclamation-circle"></i> Pending
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="quick-links">
+                <a href="/admin/AdminApp/bill/add/" class="quick-link-card">
+                    <div class="quick-link-icon">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <div class="quick-link-text">Create New Bill</div>
+                </a>
+                
+                <a href="/admin/AdminApp/vehicle/add/" class="quick-link-card">
+                    <div class="quick-link-icon">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <div class="quick-link-text">Add Vehicle</div>
+                </a>
+                
+                <a href="/admin/AdminApp/party/add/" class="quick-link-card">
+                    <div class="quick-link-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="quick-link-text">Add Party</div>
+                </a>
+                
+                <a href="/admin/AdminApp/bill/" class="quick-link-card">
+                    <div class="quick-link-icon">
+                        <i class="fas fa-list"></i>
+                    </div>
+                    <div class="quick-link-text">View All Bills</div>
+                </a>
+
+                <a href="/admin/AdminApp/driver/add/" class="quick-link-card">
+                    <div class="quick-link-icon">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <div class="quick-link-text">Add Driver</div>
+                </a>
+
+                <a href="/admin/AdminApp/vehicleowner/add/" class="quick-link-card">
+                    <div class="quick-link-icon">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="quick-link-text">Add Owner</div>
+                </a>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Revenue Trend Analysis</div>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-title">Payment Status Overview</div>
+                    <div class="chart-container">
+                        <canvas id="paymentStatusChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-title">Vehicle Performance</div>
+                    <div class="chart-container">
+                        <canvas id="vehiclePerformanceChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-title">Top Performing Parties</div>
+                    <div class="chart-container">
+                        <canvas id="partyActivityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Section -->
+            <div class="row">
+              <div class="col-lg-8"> 
+                    <div class="recent-activity">
+                        <h5 class="chart-title">Recent Bill Activity</h5>
+                        {% if recent_bills %}
+                            {% for bill in recent_bills %}
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-file-invoice"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-title">
+                                        Bill #{{ bill.bill_number }} - {{ bill.party.name|default:"Unknown Party" }}
+                                    </div>
+                                    <div class="activity-meta">
+                                        {{ bill.from_location }} → {{ bill.to_location }} • 
+                                        ₹{{ bill.rent_amount }} • 
+                                        {{ bill.bill_date }}
+                                    </div>
+                                </div>
+                                <div class="activity-status">
+                                    {% if bill.payment_status == 'Paid' %}
+                                    <span class="badge badge-paid">Paid</span>
+                                    {% elif bill.payment_status == 'Pending' %}
+                                    <span class="badge badge-pending">Pending</span>
+                                    {% else %}
+                                    <span class="badge badge-partial">Partial</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-data">
+                                <i class="fas fa-inbox"></i>
+                                <p>No recent bills found</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>   
+                <div class="col-lg-4">
+                    <!-- Business Summary -->
+                    <div class="summary-card">
+                        <h5 class="chart-title">Business Summary</h5>
+                        <div class="summary-list">
+                            <div class="d-flex justify-content-between py-2 border-bottom">
+                                <span>Total Vehicles:</span>
+                                <strong>{{ total_vehicles }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between py-2 border-bottom">
+                                <span>Total Parties:</span>
+                                <strong>{{ total_parties }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between py-2 border-bottom">
+                                <span>Total Drivers:</span>
+                                <strong>{{ total_drivers }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between py-2 border-bottom">
+                                <span>Total Owners:</span>
+                                <strong>{{ total_owners }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between py-2">
+                                <span>Total Bills:</span>
+                                <strong>{{ total_bills }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Summary -->
+                    <div class="summary-card">
+                        <h5 class="chart-title">Payment Summary</h5>
+                        <div class="summary-list">
+                            <div class="d-flex justify-content-between py-2 border-bottom">
+                                <span>Paid Bills:</span>
+                                <strong>{{ payment_status_data.Paid }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between py-2 border-bottom">
+                                <span>Partially Paid:</span>
+                                <strong>{{ payment_status_data.Partially_Paid }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between py-2">
+                                <span>Pending Bills:</span>
+                                <strong>{{ payment_status_data.Pending }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Business selection for admin users
+function updateBusiness(businessId) {
+    if (businessId) {
+        window.location.href = `{% url 'report_dashboard' %}?business=${businessId}`;
+    }
+}
+
+// Initialize Charts
+document.addEventListener('DOMContentLoaded', function() {
+    const chartData = {{ chart_data_json|safe }};
+    
+    // Revenue Chart
+    if (chartData.revenue_chart_data.labels.length > 0) {
+        new Chart(document.getElementById('revenueChart'), {
+            type: 'line',
+            data: chartData.revenue_chart_data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Amount (₹)'
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('revenueChart').parentElement.innerHTML = 
+            '<div class="no-data"><i class="fas fa-chart-line"></i><p>No revenue data available</p></div>';
+    }
+
+    // Payment Status Chart
+    if (chartData.payment_status_chart_data.labels.length > 0) {
+        new Chart(document.getElementById('paymentStatusChart'), {
+            type: 'doughnut',
+            data: chartData.payment_status_chart_data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('paymentStatusChart').parentElement.innerHTML = 
+            '<div class="no-data"><i class="fas fa-chart-pie"></i><p>No payment data available</p></div>';
+    }
+
+    // Vehicle Performance Chart
+    if (chartData.vehicle_performance_data.labels.length > 0) {
+        new Chart(document.getElementById('vehiclePerformanceChart'), {
+            type: 'bar',
+            data: chartData.vehicle_performance_data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Trips'
+                        }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Revenue (₹)'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('vehiclePerformanceChart').parentElement.innerHTML = 
+            '<div class="no-data"><i class="fas fa-truck"></i><p>No vehicle data available</p></div>';
+    }
+
+    // Party Activity Chart
+    if (chartData.party_activity_data.labels.length > 0) {
+        new Chart(document.getElementById('partyActivityChart'), {
+            type: 'bar',
+            data: chartData.party_activity_data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Revenue (₹)'
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        document.getElementById('partyActivityChart').parentElement.innerHTML = 
+            '<div class="no-data"><i class="fas fa-users"></i><p>No party data available</p></div>';
+    }
+});
+
+// Auto-refresh every 5 minutes
+setTimeout(() => {
+    window.location.reload();
+}, 300000);
+
+// Add loading states
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.querySelector('form');
+    const applyBtn = filterForm?.querySelector('button[type="submit"]');
+    
+    if (filterForm && applyBtn) {
+        filterForm.addEventListener('submit', function() {
+            applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Applying...';
+            applyBtn.disabled = true;
+        });
+    }
+});
+</script>
+
+<!-- FontAwesome -->
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+{% endblock %}

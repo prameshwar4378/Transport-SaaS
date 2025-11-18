@@ -149,16 +149,19 @@ JAZZMIN_SETTINGS = {
     # Icons that are used when one is not manually specified
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
-    
-    # Custom links to append to app groups, keyed on app name
+
+ 
+
+    # Custom links to append to app groups, keyed on app name jazzmin uses
     "custom_links": {
-        "AdminApp": [{
-            "name": "Reports", 
-            "url": "make_messages", 
-            "icon": "fas fa-chart-bar",
-            "permissions": ["AdminApp.view_customuser"]
-        }]
-    },
+        "adminapp": [
+            {
+                "name": "Report Dashboard",
+                "url": "/report-dashboard",   # Django URL name
+                "icon": "fas fa-chart-line",
+            }
+        ]
+    }, 
 }
 
 

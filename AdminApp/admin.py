@@ -69,17 +69,6 @@ class BusinessAwareAdmin(admin.ModelAdmin):
                 return ('business',) + tuple(exclude)
         return exclude
     
-    def get_exclude(self, request, obj=None):
-        exclude = super().get_exclude(request, obj) or ()
-        
-        # For non-admin users, hide business field from form entirely
-        if not hasattr(request.user, 'is_system_admin') or not request.user.is_system_admin:
-            # Check if model has business field
-            field_names = [f.name for f in self.model._meta.get_fields()]
-            if 'business' in field_names:
-                return ('business',) + tuple(exclude)  # ❌ This excludes business field from form
-        return exclude
-    
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         
@@ -826,6 +815,7 @@ class VehicleOwnerAdmin(ExportMixin, BusinessAwareAdmin):
         return form
     
 
+
 class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
@@ -1064,7 +1054,6 @@ class VehicleAdmin(ExportMixin, BusinessAwareAdmin):
             if hasattr(request.user, 'business') and request.user.business:
                 kwargs["queryset"] = VehicleOwner.objects.filter(business=request.user.business)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
 
 
 
@@ -1484,7 +1473,6 @@ class DriverAdmin(ExportMixin, BusinessAwareAdmin):
 
 
 
-
 class BillForm(forms.ModelForm):
     class Meta:
         model = Bill
@@ -1546,42 +1534,8 @@ class BillForm(forms.ModelForm):
 
         return cleaned_data
 
-    def save(self, commit=True):
-        """
-        Safe save method with bill number generation
-        """
-        # Auto-generate bill number if not set
-        if not self.instance.bill_number:
-            business = self.cleaned_data.get('business')
-            
-            if business and business.business_label:
-                words = business.business_label.strip().split()
-
-                if len(words) == 1:
-                    business_prefix = words[0][:3].upper()
-                elif len(words) == 2:
-                    business_prefix = (words[0][0] + words[1][0]).upper()
-                else:
-                    business_prefix = ''.join(w[0] for w in words[:3]).upper()
-            else:
-                business_prefix = "BILL"
-
-            # Find the last bill for this business
-            last_bill = Bill.objects.filter(business=business).order_by('-id').first()
-            if last_bill and last_bill.bill_number:
-                try:
-                    last_number = int(last_bill.bill_number.split('-')[-1])
-                    next_number = last_number + 1
-                except (ValueError, IndexError):
-                    next_number = 1
-            else:
-                next_number = 1
-
-            # Assign formatted bill number
-            self.instance.bill_number = f"{business_prefix}-{str(next_number).zfill(4)}"
-
-        # Call parent save
-        return super().save(commit=commit)
+    # REMOVE THE ENTIRE save() method from BillForm
+    # Let the model handle bill number generation
     
 
 
@@ -2083,6 +2037,5 @@ class BillAdmin(ExportMixin, BusinessAwareAdmin):
         form = super().get_form(request, obj, **kwargs)
         form.request = request  # Pass request to form
         return form
-
-  
-
+    
+ 

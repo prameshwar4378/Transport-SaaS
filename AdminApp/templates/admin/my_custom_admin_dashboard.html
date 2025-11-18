@@ -1,0 +1,12 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+  <div class="container">
+      <h1>My Custom Admin Page</h1>
+      <p>You can add anything here—forms, tables, JS, charts, realtime data, etc.</p>
+  </div>
+{% endblock %}
+{% block extrahead %}
+  <link rel="stylesheet" type="text/css" href="{% static 'admin/css/custom_admin.css' %}">
+{% endblock %}
