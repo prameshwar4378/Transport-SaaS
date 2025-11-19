@@ -1,2 +1,7 @@
-vehicle model vehcle number validation going  on
-Drive Unique validation remain (name and mobile should be not dublicate)
+ 
+Business owner can create only staff user
+need to test reach limit error
+
+Number of Vehicle can create only 
+need to test reach limit error
+

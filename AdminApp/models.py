@@ -102,7 +102,7 @@ class Business(models.Model):
     # Business status and limits
     status = models.CharField(max_length=20, choices=BUSINESS_STATUS, default='active')
     max_staff_users = models.IntegerField(default=5)  # Simple user limit
-    max_vehicles = models.IntegerField(default=50)    # Simple vehicle limit
+    max_vehicles = models.IntegerField(default=10)    # Simple vehicle limit
     
     # Business photos
     business_logo = models.ImageField(upload_to='business_logos/', null=True, blank=True)
@@ -219,7 +219,6 @@ class VehicleOwner(models.Model, RoleBasedAccessMixin):
 
 
 
-
 class Vehicle(models.Model, RoleBasedAccessMixin): 
     owner = models.ForeignKey(VehicleOwner, on_delete=models.CASCADE, null=True, blank=True) 
     business = models.ForeignKey(Business, on_delete=models.CASCADE)
@@ -280,11 +279,8 @@ class Vehicle(models.Model, RoleBasedAccessMixin):
         
         # Validate owner-business consistency
         self._validate_owner_business_consistency()
-        if len(self.vehicle_number) < 8:
-            raise ValidationError({
-                'vehicle_number': 'Vehicle number seems too short. Minimum 8 characters required.'
-            })
-    
+         
+
     def _validate_vehicle_number(self):
         """Validate and format vehicle number"""
         if self.vehicle_number:
@@ -323,6 +319,7 @@ class Vehicle(models.Model, RoleBasedAccessMixin):
         if not self.owner and self.pk:
             # For existing vehicles without owner, show warning but allow
             pass
+ 
 
     def save(self, *args, **kwargs):
         """Ensure business is set and validations pass"""
@@ -333,6 +330,7 @@ class Vehicle(models.Model, RoleBasedAccessMixin):
                 current_user = get_current_user()
                 if current_user and hasattr(current_user, 'business') and current_user.business:
                     self.business = current_user.business
+                    print(f"DEBUG: Auto-set business to {self.business} for new vehicle")
             except Exception:
                 pass  # Business will be set by admin save_model
         
@@ -345,7 +343,7 @@ class Vehicle(models.Model, RoleBasedAccessMixin):
         if self.vehicle_number:
             self.vehicle_number = self.vehicle_number.upper().replace(' ', '')
         
-        # Run full validation
+        # Run full validation (including limit checks)
         self.clean()
         
         super().save(*args, **kwargs)
@@ -627,7 +625,6 @@ class Driver(models.Model):
 
 
 
-
 class CustomUser(AbstractUser):
     ROLE_CHOICES = [
         ('admin', 'System Admin'),
@@ -655,7 +652,6 @@ class CustomUser(AbstractUser):
 
     @property
     def is_system_admin(self):
-        # Safe property that works even if called on non-CustomUser objects
         if not hasattr(self, 'is_superuser') or not hasattr(self, 'role'):
             return False
         return self.is_superuser or self.role == 'admin'
@@ -675,25 +671,35 @@ class CustomUser(AbstractUser):
     def clean(self):
         # Superuser bypasses all role-based validations
         if hasattr(self, 'is_superuser') and not self.is_superuser:
-            # Validation rules for non-superusers - FIXED
+            # Validation rules for non-superusers
             if self.role == 'staff' and not self.business_id:
                 raise ValidationError({'business': 'Staff members must be assigned to a business.'})
             
             if self.role == 'admin' and self.business_id:
                 raise ValidationError({'business': 'System admin cannot be assigned to a business.'})
+            
+            # Check staff limit when creating new staff users
+            if (self.role == 'staff' and self.business_id and 
+                not self.pk and self.is_active_staff):  # Only for new active staff
+                business = Business.objects.get(pk=self.business_id)
+                if not business.can_add_staff():
+                    print("##################")
+                    raise ValidationError({
+                        'role': f'Staff limit reached for {business.business_name}. '
+                               f'Maximum {business.max_staff_users} staff members allowed. '
+                               f'Current: {business.total_staff_users}.'
+                    })
 
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
 
     def has_perm(self, perm, obj=None):
-        # Superusers have all permissions
         if hasattr(self, 'is_superuser') and self.is_superuser:
             return True
         return super().has_perm(perm, obj)
 
     def has_module_perms(self, app_label):
-        # Superusers have all module permissions
         if hasattr(self, 'is_superuser') and self.is_superuser:
             return True
         return super().has_module_perms(app_label)

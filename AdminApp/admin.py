@@ -466,20 +466,39 @@ class CustomUserAdmin(UserAdmin):
         form = super().get_form(request, obj, **kwargs)
         
         if not (hasattr(request.user, 'is_superuser') and request.user.is_superuser):
+            # For business owners: auto-set and manage business field
+            if hasattr(request.user, 'business') and request.user.business:
+                if 'business' in form.base_fields:
+                    # For new users: pre-populate with logged-in user's business and hide the field
+                    if not obj:
+                        form.base_fields['business'].initial = request.user.business
+                        form.base_fields['business'].widget = forms.HiddenInput()
+                        print(f"DEBUG: Auto-setting business to {request.user.business} for new user")
+                    # For existing users: make it read-only and show only their business
+                    else:
+                        form.base_fields['business'].queryset = Business.objects.filter(pk=request.user.business.pk)
+                        form.base_fields['business'].disabled = True
+                        form.base_fields['business'].widget.can_add_related = False
+                        form.base_fields['business'].widget.can_change_related = False
+                        form.base_fields['business'].widget.can_delete_related = False
+                        form.base_fields['business'].widget.can_view_related = False
+            
             # Non-superusers cannot change superuser status or role for superusers
             if 'is_superuser' in form.base_fields:
                 form.base_fields['is_superuser'].disabled = True
-            if 'role' in form.base_fields and obj and obj.is_superuser:
+            
+            if 'role' in form.base_fields :
+                print("DEBUG: Disabling role field for non-superuser editing another user")
                 form.base_fields['role'].disabled = True
-            if 'business' in form.base_fields:
-                form.base_fields['business'].disabled = True
+            
             if 'groups' in form.base_fields:
                 form.base_fields['groups'].disabled = True
+            
             if 'user_permissions' in form.base_fields:
                 form.base_fields['user_permissions'].disabled = True
-                
+                    
         return form
-    
+
     def save_model(self, request, obj, form, change):
         if not change:  # Creating new user
             if (hasattr(request.user, 'is_business_owner') and 
@@ -860,6 +879,14 @@ class VehicleForm(forms.ModelForm):
                 print("🚀 DEBUG: ❌ User has no business")
         else:
             print("🚀 DEBUG: ❌ No request available")
+
+        if 1<10:
+            vehicle_count=Vehicle.objects.filter(business=business).count()
+            max_vehicles=business.max_vehicles
+            if vehicle_number and business and vehicle_count >= max_vehicles:
+                raise forms.ValidationError({
+                    'vehicle_number': f'Cannot add more vehicles. Maximum limit of {max_vehicles} reached for your business.'
+                }) 
         
         # Your existing validation logic
         if vehicle_number and business:
